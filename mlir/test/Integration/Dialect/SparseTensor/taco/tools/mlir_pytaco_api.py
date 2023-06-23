@@ -51,3 +51,9 @@ compressed = mlir_pytaco.ModeFormat.COMPRESSED
 Compressed = mlir_pytaco.ModeFormat.COMPRESSED
 dense = mlir_pytaco.ModeFormat.DENSE
 Dense = mlir_pytaco.ModeFormat.DENSE
+
+# Definitions for common complete sparse and dense formats
+csr = mlir_pytaco.Format([dense, compressed])
+csc = mlir_pytaco.Format([dense, compressed], [1, 0])
+dv = mlir_pytaco.Format([dense])
+dm = mlir_pytaco.Format([dense, dense])
