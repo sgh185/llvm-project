@@ -715,6 +715,7 @@ class IndexExpr(abc.ABC):
         dst_indices: Tuple["IndexVar", ...],
         expr_to_info: _ExprInfoDict,
         input_accesses: List["Access"],
+        prefix: str = ""
     ) -> None:
         """Emits an MLIR function for assigning the expression to a tensor."""
         input_types = [a.tensor.mlir_tensor_type() for a in input_accesses]
@@ -722,7 +723,7 @@ class IndexExpr(abc.ABC):
         # Build the kernel for the operations.
         with ir.InsertionPoint(module.body):
 
-            @func.FuncOp.from_py_func(*input_types, name=_ENTRY_NAME)
+            @func.FuncOp.from_py_func(*input_types, name=f'{prefix}.{_ENTRY_NAME}')
             def linalg_funcop(*args):
                 # Set up the mapping from the Access nodes to their MLIR values.
                 for e, mlir in zip(input_accesses, args):
@@ -777,6 +778,41 @@ class IndexExpr(abc.ABC):
             engine = utils.compile_and_build_engine(module)
 
         return engine
+
+    def emit_mlir(
+        self,
+        dst: "Tensor",
+        dst_indices: Tuple["IndexVar", ...],
+        prefix: str = ""
+    ) -> str:
+        """Emits the tensor assignment dst[dst_indices] = expression as MLIR.
+
+        No compilation via the "sparse-compiler" pipeline is performed in this 
+        method. The high-level MLIR (in the linalg dialect w/ sparse_tensor
+        attributes) is emitted.
+
+        Args:
+          dst: The destination tensor.
+          dst_indices: The tuple of IndexVar used to access the destination tensor.
+          prefix: A string prepended to the name for the emitted MLIR function.
+
+        Returns:
+          MLIR function generated as a string.
+
+        Raises:
+          ValueError: If the expression is not proper or not supported.
+        """
+        expr_to_info = self._validate_and_collect_expr_info(dst, dst_indices)
+        input_accesses = self.get_input_accesses()
+
+        # Parse and generate high-level MLIR for the expression.
+        with ir.Context(), ir.Location.unknown():
+            module = ir.Module.create()
+            self._emit_assignment(
+                module, dst, dst_indices, expr_to_info, input_accesses, prefix
+            )
+            mlir_code = str(module)
+            return mlir_code
 
 
 class _AtomicCounter:
@@ -1478,6 +1514,32 @@ class Tensor:
 
         self._engine = self._assignment.expression.compile(
             self, self._assignment.indices
+        )
+
+    def emit_mlir(self, force_recompile: bool = False, prefix: str = "") -> Union[None, str]:
+        """Emits the tensor assignment as high-level MLIR.
+
+        The code generation takes place in the underlying assignment
+        (IndexExpr) and does not invoke the "sparse-compiler" pipeline.
+
+        Args:
+          force_recompile: A boolean value to enable recompilation, such as for the
+            purpose of timing.
+          prefix: A string prepended to the name for the emitted MLIR function.
+
+        Returns:
+          MLIR function generated as a string.
+
+        Raises:
+          ValueError: If the assignment is not proper or not supported.
+        """
+        if self._assignment is None or (
+            self._engine is not None and not force_recompile
+        ):
+            return None
+
+        return self._assignment.expression.emit_mlir(
+            self, self._assignment.indices, prefix
         )
 
     def compute(self) -> None:
