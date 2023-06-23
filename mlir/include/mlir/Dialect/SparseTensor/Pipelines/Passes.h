@@ -52,6 +52,14 @@ struct SparseCompilerOptions
               mlir::SparseParallelizationStrategy::kAnyStorageAnyLoop,
               "any-storage-any-loop",
               "Enable sparse parallelization for any storage and loop."))};
+              
+  PassOptions::Option<bool> experimentalPipeline{
+      *this, "experimental",
+      desc("Enable experimental compilation pipeline"), init(false)};
+
+  PassOptions::Option<bool> enableOpenMP{
+      *this, "enable-openmp",
+      desc("Enable openmp parallelization"), init(false)};
 
   PassOptions::Option<bool> enableIndexReduction{
       *this, "enable-index-reduction",

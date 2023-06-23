@@ -9,6 +9,7 @@
 #include "mlir/Dialect/SparseTensor/Pipelines/Passes.h"
 
 #include "mlir/Conversion/GPUToNVVM/GPUToNVVMPass.h"
+#include "mlir/Conversion/SCFToOpenMP/SCFToOpenMP.h"
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/Arith/Transforms/Passes.h"
 #include "mlir/Dialect/Bufferization/Transforms/Bufferize.h"
@@ -83,9 +84,21 @@ void mlir::sparse_tensor::buildSparseCompiler(
   // it to this pipeline.
   pm.addNestedPass<func::FuncOp>(createConvertLinalgToLoopsPass());
   pm.addNestedPass<func::FuncOp>(createConvertVectorToSCFPass());
+
+  /*
+   * NEW -> Adding OpenMP lowering *before* the rest of the SCF-to passes
+   * to capture scf.parallel, scf.reduce, etc. before they're lost to the
+   * CF and LLVM dialects.
+   */
+  if (options.enableOpenMP) {
+    pm.addPass(createConvertSCFToOpenMPPass());
+    pm.addNestedPass<func::FuncOp>(createCanonicalizerPass()); 
+  }
+
   pm.addNestedPass<func::FuncOp>(createConvertSCFToCFPass());
   pm.addPass(memref::createExpandStridedMetadataPass());
   pm.addPass(createLowerAffinePass());
+  
   pm.addPass(createConvertVectorToLLVMPass(options.lowerVectorToLLVMOptions()));
   pm.addPass(createFinalizeMemRefToLLVMConversionPass());
   pm.addNestedPass<func::FuncOp>(createConvertComplexToStandardPass());
@@ -93,11 +106,43 @@ void mlir::sparse_tensor::buildSparseCompiler(
   pm.addNestedPass<func::FuncOp>(createConvertMathToLLVMPass());
   pm.addPass(createConvertMathToLibmPass());
   pm.addPass(createConvertComplexToLibmPass());
+
   // Repeat convert-vector-to-llvm.
   pm.addPass(createConvertVectorToLLVMPass(options.lowerVectorToLLVMOptions()));
   pm.addPass(createConvertComplexToLLVMPass());
   pm.addPass(createConvertVectorToLLVMPass(options.lowerVectorToLLVMOptions()));
-  pm.addPass(createConvertFuncToLLVMPass());
+
+  /*
+   * NEW -> Adding OpenMP lowering *after* the rest of the to-LLVM passes
+   * so that all other dialects are not treated as "illegal" by the OpenMP
+   * conversion pass. TODO: Confirm.
+   */
+  if (options.enableOpenMP) {
+    pm.addPass(createConvertOpenMPToLLVMPass());
+  }
+
+  /*
+   * NEW -> Experimental option disables convert-func-to-llvm
+   */
+  if (!options.experimentalPipeline) {
+    /*
+     * ** If we want to target runtime calls (e.g. -sparse-tensor-conversion): **
+     *
+     * -convert-func-to-llvm generates calls to _mi_ciface_* external
+     * functions, presumably matching a naming convention of runtime
+     * functions to be invoked via shared library objects (e.g. the 
+     * c_runner_utils). Function conversion takes a rewriter.
+     * 
+     * -sparse-compiler="enable-openmp" also internally calls 
+     * the driver for convert-func-to-llvm when lowering OpenMP to LLVM
+     * (see above in the pipeline).
+     * 
+     * The fact that function conversion takes a rewriter is a *good sign.*
+     * Could possibly pass another rewriter to lower to different library
+     * calls or piggy-back on what's already available.
+     */
+    pm.addPass(createConvertFuncToLLVMPass()); // Originally part of the pipeline, default: ON
+  }
 
   // Finalize GPU code generation.
   if (gpuCodegen) {
