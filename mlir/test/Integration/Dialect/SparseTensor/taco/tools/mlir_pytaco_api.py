@@ -53,7 +53,11 @@ dense = mlir_pytaco.ModeFormat.DENSE
 Dense = mlir_pytaco.ModeFormat.DENSE
 
 # Definitions for common complete sparse and dense formats
-csr = mlir_pytaco.Format([dense, compressed])
-csc = mlir_pytaco.Format([dense, compressed], [1, 0])
-dv = mlir_pytaco.Format([dense])
-dm = mlir_pytaco.Format([dense, dense])
+csr = mlir_pytaco.Format([dense, compressed]) # Compressed sparse row
+csc = mlir_pytaco.Format([dense, compressed], [1, 0]) # Compressed sparse column
+csf = mlir_pytaco.Format([compressed, compressed, compressed]) # Compressed sparse fiber
+dcc = mlir_pytaco.Format([dense, compressed, compressed]) # Dense-sparse-sparse (unclear name)
+dv = mlir_pytaco.Format([dense]) # Dense vector
+cv = mlir_pytaco.Format([compressed]) # Compressed vector
+dm = mlir_pytaco.Format([dense, dense]) # Dense 2D matrix
+dt = mlir_pytaco.Format([dense, dense, dense]) # Dense 3D tensor
