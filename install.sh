@@ -2,6 +2,8 @@
 
 # Installs MLIR w/ python bindings + execution engine
 
+cd ${MLIR_LLVM_DIR} ;
+git checkout sparse ;
 mkdir -p ${MLIR_LLVM_DIR}/build ;
 cd ${MLIR_LLVM_DIR}/build ;
 
@@ -17,6 +19,6 @@ cmake -G Ninja ../llvm \
     -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
     -DPython3_EXECUTABLE=${PYTHON3_PATH} \
     -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
-    -DMLIR_ENABLE_PYTHON_BENCHMARKS=ON
+    -DMLIR_ENABLE_PYTHON_BENCHMARKS=ON ;
 
-cmake --build . --target check-mlir
+cmake --build . --target check-mlir ;
