@@ -7,6 +7,7 @@ sys.path.append(_SCRIPT_PATH)
 from typing import List
 
 OUTPUT_DIR = './output'
+KERNELS_DIR = './kernels'
 
 DEBUG="[DEBUG]:"
 ERROR="[ERROR]:"
@@ -40,7 +41,7 @@ def pytaco_to_mlir(args) -> List[str]:
     except:
         assert False, f"{ERROR} Can't find {args.kernel}!!"
 
-    if args.v: print(DEBUG, f'Found kernel in [./{args.kernel}.py].')
+    if args.v: print(DEBUG, f'Found kernel in [{KERNELS_DIR}/{args.kernel}.py].')
 
     # Generate output directory, if necessary
     if not os.path.exists(OUTPUT_DIR):
@@ -124,12 +125,15 @@ def lower_mlir(args, prefixes: List[str]) -> None:
 
 
 def main(args):
+    print(f"================================\n{args.kernel}\n================================")
+
     # Generate high-level MLIR from PyTaco kernel
     tensor_prefixes = pytaco_to_mlir(args)
 
     # Lower MLIR to the LLVM dialect
     lower_mlir(args, tensor_prefixes)
-        
+
+    print("================================\n")
     return
 
 if __name__ == "__main__":
@@ -156,6 +160,10 @@ if __name__ == "__main__":
         type=str,
         help='Path to output directory')
     argparser.add_argument(
+        '--kernels-dir',
+        type=str,
+        help='Path to kernels directory')
+    argparser.add_argument(
         '--par-strategy',
         type=str,
         help='Option "parallelization-strategy" for "sparse-compiler" ; see mlir-opt --help for more')
@@ -180,6 +188,9 @@ if __name__ == "__main__":
         action='store_true',
         help='Verbose')
     args = argparser.parse_args()
+
     if args.output_dir is not None: OUTPUT_DIR = args.output_dir
+    if args.kernels_dir is not None: KERNELS_DIR = args.kernels_dir
+    sys.path.append(KERNELS_DIR)
 
     main(args)
