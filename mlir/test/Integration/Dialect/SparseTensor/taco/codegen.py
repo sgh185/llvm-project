@@ -18,6 +18,7 @@ DEFAULT_PAR = 'any-storage-any-loop'
 DEFAULT_RUNTIME = 'enable-runtime-library=false'
 DEFAULT_OMP = 'enable-openmp'
 DEFAULT_DUMP = '-mlir-print-ir-after-all'
+DEFAULT_EXTRA = ''
 
 TRANSLATE = 'mlir-translate'
 TRANSLATE_FLAGS = '-mlir-to-llvmir'
@@ -98,10 +99,11 @@ def lower_mlir(args, prefixes: List[str]) -> None:
         runtime = DEFAULT_RUNTIME if not args.target_runtime else ''
         omp = DEFAULT_OMP if not args.disable_omp else ''
         dump = DEFAULT_DUMP if not args.disable_dump else ''
+        extra = DEFAULT_EXTRA if args.extra is None else args.extra
 
         # Build mlir-opt command
         dump_fname = f'{OUTPUT_DIR}/{prefix}.lowering.out'
-        cmd = f'{OPT} {OPT_FLAGS}{par} {runtime} {omp}" {dump} {mlir_file} -o {lowered_mlir}'
+        cmd = f'{OPT} {OPT_FLAGS}{par} {runtime} {omp} {extra}" {dump} {mlir_file} -o {lowered_mlir}'
         print(COMMAND, f"Lowering {mlir_file}:\n{cmd}")
 
         # Run the command
@@ -169,6 +171,10 @@ if __name__ == "__main__":
         '--disable-dump',
         action='store_true',
         help='Disable printing of IR after each pass')
+    argparser.add_argument(
+        '--extra',
+        type=str,
+        help='Extra options to pass to "sparse-compiler" ; see mlir-opt --help')
     argparser.add_argument(
         '--v',
         action='store_true',
