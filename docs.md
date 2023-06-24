@@ -207,9 +207,21 @@ This is compiled with OpenMP support, generating code in the ```llvm``` and ```o
     }
 ```
 
-**No runtime calls or intrinsics are generated other than those relavant to OpenMP**. This should streamline compilation flows through an HLS backend or library-targeting backend.
+**No runtime calls or intrinsics are generated other than those relavant to OpenMP**. This should streamline compilation flows through an HLS backend or library-targeting backend. The ```enable-runtime-library=false``` option accomplishes this.
 
-### Resources
+## Next Steps and Potential Issues
+
+### ```sparse-compiler``` Parallelization Strategies
+The ```sparse-compiler``` provides several configurable parallelization strategies, but we have not studied these extensively yet. Currently, ```parallelization-strategy='any-storage-any-loop'``` enables the highest degree of paralellelism across all loops for both dense and compressed level-types. There are several other parallelization strategies (see ```mlir-opt --help```) that may be a better match for a specific kernel; we haven't explored this yet. 
+
+MLIR-supported parallelization is sometimes not applicable to certain kernels at all. From testing, we've realized that MLIR doesn't support nested reductions [on purpose](https://github.com/llvm/llvm-project/blob/c0f0d50653e16145beee474a3d0d602596502dde/mlir/lib/Dialect/SparseTensor/Transforms/LoopEmitter.cpp#L1345) in ```scf.parallel``` loop nests, which is a precursor to OpenMP parallelization via the ```omp``` dialect. This disables parallelization completely for Reduce2D and InnerProd.
+
+These kernels should be compatible with ```scf.forall``` instead, but we have not found support for this alternative parallelization approach. Other strategies should also be investigated. 
+
+### Sparse Formats
+Code generation and lowering depends on the sparse formats chosen. Sparse tensor formats are chosen (relatively) arbitrarily, and we often opt for common formats like CSR and CSF. We should investigate formats that may generate more performant code.
+
+## Resources
 1. TACO (PLDI '17) : https://fredrikbk.com/publications/taco.pdf
 2. MLIR-PyTACO (Developers Meeting '22): https://mlir.llvm.org/OpenMeetings/2022-02-10-PyTACO.pdf
 3. PyTACO documentation: http://tensor-compiler.org/docs/pytensors.html
