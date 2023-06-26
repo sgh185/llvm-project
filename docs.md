@@ -38,7 +38,7 @@ The MLIR sparse tensor compiler source code is in ```${MLIR_LLVM_DIR}/mlir/lib``
 
 ### TL;DR
 
-To compile all sparse kernels, run:
+To **compile** all sparse kernels, run:
 ```bash
 cd ${TACO} ;
 ./run_kernels.sh ;
@@ -50,6 +50,8 @@ To compile a specific kernel (e.g. SpMVMul, defined in ```${TACO}/kernels/SpMVMu
 ```bash
 python3 codegen.py --kernel SpMVMul --inps 128 128 --v
 ```
+
+To examine all the expected output files and compiled IR (```.mlir```, ```.lowered.mlir```, ```.lowering.out```, ```.lowered.ll```), see ```${TACO}/expected_output```. 
 
 ### Sparse Kernels
 
