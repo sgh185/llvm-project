@@ -51,7 +51,7 @@ To compile a specific kernel (e.g. SpMVMul, defined in ```${TACO}/kernels/SpMVMu
 python3 codegen.py --kernel SpMVMul --inps 128 128 --v
 ```
 
-To examine all the expected output files and compiled IR (```.mlir```, ```.lowered.mlir```, ```.lowering.out```, ```.lowered.ll```), see ```${TACO}/expected_output```. 
+To examine all the **expected output files and compiled IR** (```.mlir```, ```.lowered.mlir```, ```.lowering.out```, ```.lowered.ll```), see ```${TACO}/expected_output```. 
 
 ### Sparse Kernels
 
