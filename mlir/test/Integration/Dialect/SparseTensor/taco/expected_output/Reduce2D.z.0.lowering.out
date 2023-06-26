@@ -1,0 +1,1484 @@
+// -----// IR Dump After LinalgGeneralization (linalg-generalize-named-ops) //----- //
+func.func @Reduce2D.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+  %cst = arith.constant 0.000000e+00 : f32
+  %0 = tensor.empty() : tensor<f32>
+  %1 = linalg.generic {indexing_maps = [affine_map<() -> ()>, affine_map<() -> ()>], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    linalg.yield %in : f32
+  } -> tensor<f32>
+  %2 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> ()>], iterator_types = ["reduction", "reduction"]} ins(%arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) outs(%1 : tensor<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    %3 = arith.addf %out, %in : f32
+    linalg.yield %3 : f32
+  } -> tensor<f32>
+  return %2 : tensor<f32>
+}
+
+// -----// IR Dump After PreSparsificationRewrite (pre-sparsification-rewrite) //----- //
+#map = affine_map<() -> ()>
+#map1 = affine_map<(d0, d1) -> (d0, d1)>
+#map2 = affine_map<(d0, d1) -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = tensor.empty() : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = linalg.generic {indexing_maps = [#map1, #map2], iterator_types = ["reduction", "reduction"]} ins(%arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) outs(%1 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      %3 = arith.addf %out, %in : f32
+      linalg.yield %3 : f32
+    } -> tensor<f32>
+    return %2 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After EmptyTensorToAllocTensor (empty-tensor-to-alloc-tensor) //----- //
+func.func @Reduce2D.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+  %cst = arith.constant 0.000000e+00 : f32
+  %0 = bufferization.alloc_tensor() : tensor<f32>
+  %1 = linalg.generic {indexing_maps = [affine_map<() -> ()>, affine_map<() -> ()>], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    linalg.yield %in : f32
+  } -> tensor<f32>
+  %2 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> ()>], iterator_types = ["reduction", "reduction"]} ins(%arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) outs(%1 : tensor<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    %3 = arith.addf %out, %in : f32
+    linalg.yield %3 : f32
+  } -> tensor<f32>
+  return %2 : tensor<f32>
+}
+
+// -----// IR Dump After SparsificationPass (sparsification) //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %3 = sparse_tensor.values %arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
+    %4 = bufferization.to_memref %1 : memref<f32>
+    %5 = memref.load %4[] : memref<f32>
+    %6 = scf.for %arg1 = %c0 to %c128 step %c1 iter_args(%arg2 = %5) -> (f32) {
+      %8 = memref.load %2[%arg1] : memref<?xindex>
+      %9 = arith.addi %arg1, %c1 : index
+      %10 = memref.load %2[%9] : memref<?xindex>
+      %11 = scf.for %arg3 = %8 to %10 step %c1 iter_args(%arg4 = %arg2) -> (f32) {
+        %12 = memref.load %3[%arg3] : memref<?xf32>
+        %13 = arith.addf %arg4, %12 : f32
+        scf.yield %13 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %11 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %6, %4[] : memref<f32>
+    %7 = bufferization.to_tensor %4 : memref<f32>
+    return %7 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After PostSparsificationRewrite (post-sparsification-rewrite) //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %3 = sparse_tensor.values %arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
+    %4 = bufferization.to_memref %1 : memref<f32>
+    %5 = memref.load %4[] : memref<f32>
+    %6 = scf.for %arg1 = %c0 to %c128 step %c1 iter_args(%arg2 = %5) -> (f32) {
+      %8 = memref.load %2[%arg1] : memref<?xindex>
+      %9 = arith.addi %arg1, %c1 : index
+      %10 = memref.load %2[%9] : memref<?xindex>
+      %11 = scf.for %arg3 = %8 to %10 step %c1 iter_args(%arg4 = %arg2) -> (f32) {
+        %12 = memref.load %3[%arg3] : memref<?xf32>
+        %13 = arith.addf %arg4, %12 : f32
+        scf.yield %13 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %11 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %6, %4[] : memref<f32>
+    %7 = bufferization.to_tensor %4 : memref<f32>
+    return %7 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After SparseTensorCodegen (sparse-tensor-codegen) //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = bufferization.to_memref %1 : memref<f32>
+    %3 = memref.load %2[] : memref<f32>
+    %4 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %3) -> (f32) {
+      %6 = memref.load %arg0[%arg4] : memref<?xindex>
+      %7 = arith.addi %arg4, %c1 : index
+      %8 = memref.load %arg0[%7] : memref<?xindex>
+      %9 = scf.for %arg6 = %6 to %8 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+        %10 = memref.load %arg2[%arg6] : memref<?xf32>
+        %11 = arith.addf %arg7, %10 : f32
+        scf.yield %11 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %9 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %4, %2[] : memref<f32>
+    %5 = bufferization.to_tensor %2 : memref<f32>
+    return %5 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After SparseBufferRewrite (sparse-buffer-rewrite) //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = bufferization.to_memref %1 : memref<f32>
+    %3 = memref.load %2[] : memref<f32>
+    %4 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %3) -> (f32) {
+      %6 = memref.load %arg0[%arg4] : memref<?xindex>
+      %7 = arith.addi %arg4, %c1 : index
+      %8 = memref.load %arg0[%7] : memref<?xindex>
+      %9 = scf.for %arg6 = %6 to %8 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+        %10 = memref.load %arg2[%arg6] : memref<?xf32>
+        %11 = arith.addf %arg7, %10 : f32
+        scf.yield %11 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %9 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %4, %2[] : memref<f32>
+    %5 = bufferization.to_tensor %2 : memref<f32>
+    return %5 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After StorageSpecifierToLLVM (sparse-storage-specifier-to-llvm) //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> tensor<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<f32>
+    %1 = linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%0 : tensor<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    } -> tensor<f32>
+    %2 = bufferization.to_memref %1 : memref<f32>
+    %3 = memref.load %2[] : memref<f32>
+    %4 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %3) -> (f32) {
+      %6 = memref.load %arg0[%arg4] : memref<?xindex>
+      %7 = arith.addi %arg4, %c1 : index
+      %8 = memref.load %arg0[%7] : memref<?xindex>
+      %9 = scf.for %arg6 = %6 to %8 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+        %10 = memref.load %arg2[%arg6] : memref<?xf32>
+        %11 = arith.addf %arg7, %10 : f32
+        scf.yield %11 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %9 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %4, %2[] : memref<f32>
+    %5 = bufferization.to_tensor %2 : memref<f32>
+    return %5 : tensor<f32>
+  }
+}
+
+
+// -----// IR Dump After mlir::sparse_tensor::SparsificationAndBufferizationPass () //----- //
+#map = affine_map<() -> ()>
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+    linalg.generic {indexing_maps = [#map, #map], iterator_types = []} ins(%cst : f32) outs(%alloc : memref<f32>) {
+    ^bb0(%in: f32, %out: f32):
+      linalg.yield %in : f32
+    }
+    %0 = memref.load %alloc[] : memref<f32>
+    %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+      %2 = memref.load %arg0[%arg4] : memref<?xindex>
+      %3 = arith.addi %arg4, %c1 : index
+      %4 = memref.load %arg0[%3] : memref<?xindex>
+      %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+        %6 = memref.load %arg2[%arg6] : memref<?xf32>
+        %7 = arith.addf %arg7, %6 : f32
+        scf.yield %7 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %5 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %1, %alloc[] : memref<f32>
+    return %alloc : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  linalg.generic {indexing_maps = [affine_map<() -> ()>, affine_map<() -> ()>], iterator_types = []} ins(%cst : f32) outs(%alloc : memref<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    linalg.yield %in : f32
+  }
+  %0 = memref.load %alloc[] : memref<f32>
+  %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+    %2 = memref.load %arg0[%arg4] : memref<?xindex>
+    %3 = arith.addi %arg4, %c1 : index
+    %4 = memref.load %arg0[%3] : memref<?xindex>
+    %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+      %6 = memref.load %arg2[%arg6] : memref<?xf32>
+      %7 = arith.addf %arg7, %6 : f32
+      scf.yield %7 : f32
+    } {"Emitted from" = "linalg.generic"}
+    scf.yield %5 : f32
+  } {"Emitted from" = "linalg.generic"}
+  memref.store %1, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After FinalizingBufferize (finalizing-bufferize) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  linalg.generic {indexing_maps = [affine_map<() -> ()>, affine_map<() -> ()>], iterator_types = []} ins(%cst : f32) outs(%alloc : memref<f32>) {
+  ^bb0(%in: f32, %out: f32):
+    linalg.yield %in : f32
+  }
+  %0 = memref.load %alloc[] : memref<f32>
+  %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+    %2 = memref.load %arg0[%arg4] : memref<?xindex>
+    %3 = arith.addi %arg4, %c1 : index
+    %4 = memref.load %arg0[%3] : memref<?xindex>
+    %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+      %6 = memref.load %arg2[%arg6] : memref<?xf32>
+      %7 = arith.addf %arg7, %6 : f32
+      scf.yield %7 : f32
+    } {"Emitted from" = "linalg.generic"}
+    scf.yield %5 : f32
+  } {"Emitted from" = "linalg.generic"}
+  memref.store %1, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After LinalgLowerToLoops (convert-linalg-to-loops) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  memref.store %cst, %alloc[] : memref<f32>
+  %0 = memref.load %alloc[] : memref<f32>
+  %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+    %2 = memref.load %arg0[%arg4] : memref<?xindex>
+    %3 = arith.addi %arg4, %c1 : index
+    %4 = memref.load %arg0[%3] : memref<?xindex>
+    %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+      %6 = memref.load %arg2[%arg6] : memref<?xf32>
+      %7 = arith.addf %arg7, %6 : f32
+      scf.yield %7 : f32
+    } {"Emitted from" = "linalg.generic"}
+    scf.yield %5 : f32
+  } {"Emitted from" = "linalg.generic"}
+  memref.store %1, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After ConvertVectorToSCF (convert-vector-to-scf) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  memref.store %cst, %alloc[] : memref<f32>
+  %0 = memref.load %alloc[] : memref<f32>
+  %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+    %2 = memref.load %arg0[%arg4] : memref<?xindex>
+    %3 = arith.addi %arg4, %c1 : index
+    %4 = memref.load %arg0[%3] : memref<?xindex>
+    %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+      %6 = memref.load %arg2[%arg6] : memref<?xf32>
+      %7 = arith.addf %arg7, %6 : f32
+      scf.yield %7 : f32
+    } {"Emitted from" = "linalg.generic"}
+    scf.yield %5 : f32
+  } {"Emitted from" = "linalg.generic"}
+  memref.store %1, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After ConvertSCFToOpenMPPass (convert-scf-to-openmp) //----- //
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+    memref.store %cst, %alloc[] : memref<f32>
+    %0 = memref.load %alloc[] : memref<f32>
+    %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+      %2 = memref.load %arg0[%arg4] : memref<?xindex>
+      %3 = arith.addi %arg4, %c1 : index
+      %4 = memref.load %arg0[%3] : memref<?xindex>
+      %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+        %6 = memref.load %arg2[%arg6] : memref<?xf32>
+        %7 = arith.addf %arg7, %6 : f32
+        scf.yield %7 : f32
+      } {"Emitted from" = "linalg.generic"}
+      scf.yield %5 : f32
+    } {"Emitted from" = "linalg.generic"}
+    memref.store %1, %alloc[] : memref<f32>
+    return %alloc : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  memref.store %cst, %alloc[] : memref<f32>
+  %0 = memref.load %alloc[] : memref<f32>
+  %1 = scf.for %arg4 = %c0 to %c128 step %c1 iter_args(%arg5 = %0) -> (f32) {
+    %2 = memref.load %arg0[%arg4] : memref<?xindex>
+    %3 = arith.addi %arg4, %c1 : index
+    %4 = memref.load %arg0[%3] : memref<?xindex>
+    %5 = scf.for %arg6 = %2 to %4 step %c1 iter_args(%arg7 = %arg5) -> (f32) {
+      %6 = memref.load %arg2[%arg6] : memref<?xf32>
+      %7 = arith.addf %arg7, %6 : f32
+      scf.yield %7 : f32
+    } {"Emitted from" = "linalg.generic"}
+    scf.yield %5 : f32
+  } {"Emitted from" = "linalg.generic"}
+  memref.store %1, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+  memref.store %cst, %alloc[] : memref<f32>
+  %0 = memref.load %alloc[] : memref<f32>
+  cf.br ^bb1(%c0, %0 : index, f32)
+^bb1(%1: index, %2: f32):  // 2 preds: ^bb0, ^bb5
+  %3 = arith.cmpi slt, %1, %c128 : index
+  cf.cond_br %3, ^bb2, ^bb6
+^bb2:  // pred: ^bb1
+  %4 = memref.load %arg0[%1] : memref<?xindex>
+  %5 = arith.addi %1, %c1 : index
+  %6 = memref.load %arg0[%5] : memref<?xindex>
+  cf.br ^bb3(%4, %2 : index, f32)
+^bb3(%7: index, %8: f32):  // 2 preds: ^bb2, ^bb4
+  %9 = arith.cmpi slt, %7, %6 : index
+  cf.cond_br %9, ^bb4, ^bb5
+^bb4:  // pred: ^bb3
+  %10 = memref.load %arg2[%7] : memref<?xf32>
+  %11 = arith.addf %8, %10 : f32
+  %12 = arith.addi %7, %c1 : index
+  cf.br ^bb3(%12, %11 : index, f32)
+^bb5:  // pred: ^bb3
+  %13 = arith.addi %1, %c1 : index
+  cf.br ^bb1(%13, %8 : index, f32)
+^bb6:  // pred: ^bb1
+  memref.store %2, %alloc[] : memref<f32>
+  return %alloc : memref<f32>
+}
+
+// -----// IR Dump After ExpandStridedMetadata (expand-strided-metadata) //----- //
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+    memref.store %cst, %alloc[] : memref<f32>
+    %0 = memref.load %alloc[] : memref<f32>
+    cf.br ^bb1(%c0, %0 : index, f32)
+  ^bb1(%1: index, %2: f32):  // 2 preds: ^bb0, ^bb5
+    %3 = arith.cmpi slt, %1, %c128 : index
+    cf.cond_br %3, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %4 = memref.load %arg0[%1] : memref<?xindex>
+    %5 = arith.addi %1, %c1 : index
+    %6 = memref.load %arg0[%5] : memref<?xindex>
+    cf.br ^bb3(%4, %2 : index, f32)
+  ^bb3(%7: index, %8: f32):  // 2 preds: ^bb2, ^bb4
+    %9 = arith.cmpi slt, %7, %6 : index
+    cf.cond_br %9, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %10 = memref.load %arg2[%7] : memref<?xf32>
+    %11 = arith.addf %8, %10 : f32
+    %12 = arith.addi %7, %c1 : index
+    cf.br ^bb3(%12, %11 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %13 = arith.addi %1, %c1 : index
+    cf.br ^bb1(%13, %8 : index, f32)
+  ^bb6:  // pred: ^bb1
+    memref.store %2, %alloc[] : memref<f32>
+    return %alloc : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertAffineToStandard (lower-affine) //----- //
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+    memref.store %cst, %alloc[] : memref<f32>
+    %0 = memref.load %alloc[] : memref<f32>
+    cf.br ^bb1(%c0, %0 : index, f32)
+  ^bb1(%1: index, %2: f32):  // 2 preds: ^bb0, ^bb5
+    %3 = arith.cmpi slt, %1, %c128 : index
+    cf.cond_br %3, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %4 = memref.load %arg0[%1] : memref<?xindex>
+    %5 = arith.addi %1, %c1 : index
+    %6 = memref.load %arg0[%5] : memref<?xindex>
+    cf.br ^bb3(%4, %2 : index, f32)
+  ^bb3(%7: index, %8: f32):  // 2 preds: ^bb2, ^bb4
+    %9 = arith.cmpi slt, %7, %6 : index
+    cf.cond_br %9, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %10 = memref.load %arg2[%7] : memref<?xf32>
+    %11 = arith.addf %8, %10 : f32
+    %12 = arith.addi %7, %c1 : index
+    cf.br ^bb3(%12, %11 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %13 = arith.addi %1, %c1 : index
+    cf.br ^bb1(%13, %8 : index, f32)
+  ^bb6:  // pred: ^bb1
+    memref.store %2, %alloc[] : memref<f32>
+    return %alloc : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertVectorToLLVMPass (convert-vector-to-llvm) //----- //
+module {
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %alloc = memref.alloc() {alignment = 64 : i64} : memref<f32>
+    memref.store %cst, %alloc[] : memref<f32>
+    %0 = memref.load %alloc[] : memref<f32>
+    cf.br ^bb1(%c0, %0 : index, f32)
+  ^bb1(%1: index, %2: f32):  // 2 preds: ^bb0, ^bb5
+    %3 = arith.cmpi slt, %1, %c128 : index
+    cf.cond_br %3, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %4 = memref.load %arg0[%1] : memref<?xindex>
+    %5 = arith.addi %1, %c1 : index
+    %6 = memref.load %arg0[%5] : memref<?xindex>
+    cf.br ^bb3(%4, %2 : index, f32)
+  ^bb3(%7: index, %8: f32):  // 2 preds: ^bb2, ^bb4
+    %9 = arith.cmpi slt, %7, %6 : index
+    cf.cond_br %9, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %10 = memref.load %arg2[%7] : memref<?xf32>
+    %11 = arith.addf %8, %10 : f32
+    %12 = arith.addi %7, %c1 : index
+    cf.br ^bb3(%12, %11 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %13 = arith.addi %1, %c1 : index
+    cf.br ^bb1(%13, %8 : index, f32)
+  ^bb6:  // pred: ^bb1
+    memref.store %2, %alloc[] : memref<f32>
+    return %alloc : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After FinalizeMemRefToLLVMConversionPass (finalize-memref-to-llvm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %3 = llvm.mlir.null : !llvm.ptr
+    %4 = llvm.getelementptr %3[%2] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+    %6 = llvm.mlir.constant(64 : index) : i64
+    %7 = llvm.add %5, %6  : i64
+    %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+    %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+    %10 = llvm.mlir.constant(1 : index) : i64
+    %11 = llvm.sub %6, %10  : i64
+    %12 = llvm.add %9, %11  : i64
+    %13 = llvm.urem %12, %6  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.mlir.constant(0 : index) : i64
+    %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    %22 = llvm.extractvalue %20[1] : !llvm.struct<(ptr, ptr, i64)> 
+    llvm.store %cst, %22 : f32, !llvm.ptr
+    %23 = llvm.extractvalue %20[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %24 = llvm.load %23 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %24 : index, f32)
+  ^bb1(%25: index, %26: f32):  // 2 preds: ^bb0, ^bb5
+    %27 = builtin.unrealized_conversion_cast %25 : index to i64
+    %28 = arith.cmpi slt, %25, %c128 : index
+    cf.cond_br %28, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %29 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %30 = llvm.getelementptr %29[%27] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %31 = llvm.load %30 : !llvm.ptr -> i64
+    %32 = builtin.unrealized_conversion_cast %31 : i64 to index
+    %33 = arith.addi %25, %c1 : index
+    %34 = builtin.unrealized_conversion_cast %33 : index to i64
+    %35 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %36 = llvm.getelementptr %35[%34] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %37 = llvm.load %36 : !llvm.ptr -> i64
+    %38 = builtin.unrealized_conversion_cast %37 : i64 to index
+    cf.br ^bb3(%32, %26 : index, f32)
+  ^bb3(%39: index, %40: f32):  // 2 preds: ^bb2, ^bb4
+    %41 = builtin.unrealized_conversion_cast %39 : index to i64
+    %42 = arith.cmpi slt, %39, %38 : index
+    cf.cond_br %42, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %43 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %44 = llvm.getelementptr %43[%41] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %45 = llvm.load %44 : !llvm.ptr -> f32
+    %46 = arith.addf %40, %45 : f32
+    %47 = arith.addi %39, %c1 : index
+    cf.br ^bb3(%47, %46 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %48 = arith.addi %25, %c1 : index
+    cf.br ^bb1(%48, %40 : index, f32)
+  ^bb6:  // pred: ^bb1
+    %49 = llvm.extractvalue %20[1] : !llvm.struct<(ptr, ptr, i64)> 
+    llvm.store %26, %49 : f32, !llvm.ptr
+    return %21 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertComplexToStandard (convert-complex-to-standard) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %2 = llvm.mlir.constant(1 : index) : i64
+  %3 = llvm.mlir.null : !llvm.ptr
+  %4 = llvm.getelementptr %3[1] : (!llvm.ptr) -> !llvm.ptr, f32
+  %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+  %6 = llvm.mlir.constant(64 : index) : i64
+  %7 = llvm.add %5, %6  : i64
+  %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+  %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+  %10 = llvm.mlir.constant(1 : index) : i64
+  %11 = llvm.sub %6, %10  : i64
+  %12 = llvm.add %9, %11  : i64
+  %13 = llvm.urem %12, %6  : i64
+  %14 = llvm.sub %12, %13  : i64
+  %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+  %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+  %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+  %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+  %19 = llvm.mlir.constant(0 : index) : i64
+  %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+  %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+  llvm.store %cst, %15 : f32, !llvm.ptr
+  %22 = llvm.load %15 : !llvm.ptr -> f32
+  cf.br ^bb1(%c0, %22 : index, f32)
+^bb1(%23: index, %24: f32):  // 2 preds: ^bb0, ^bb5
+  %25 = builtin.unrealized_conversion_cast %23 : index to i64
+  %26 = arith.cmpi slt, %23, %c128 : index
+  cf.cond_br %26, ^bb2, ^bb6
+^bb2:  // pred: ^bb1
+  %27 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %28 = llvm.getelementptr %27[%25] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %29 = llvm.load %28 : !llvm.ptr -> i64
+  %30 = builtin.unrealized_conversion_cast %29 : i64 to index
+  %31 = arith.addi %23, %c1 : index
+  %32 = builtin.unrealized_conversion_cast %31 : index to i64
+  %33 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %34 = llvm.getelementptr %33[%32] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %35 = llvm.load %34 : !llvm.ptr -> i64
+  %36 = builtin.unrealized_conversion_cast %35 : i64 to index
+  cf.br ^bb3(%30, %24 : index, f32)
+^bb3(%37: index, %38: f32):  // 2 preds: ^bb2, ^bb4
+  %39 = builtin.unrealized_conversion_cast %37 : index to i64
+  %40 = arith.cmpi slt, %37, %36 : index
+  cf.cond_br %40, ^bb4, ^bb5
+^bb4:  // pred: ^bb3
+  %41 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %42 = llvm.getelementptr %41[%39] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+  %43 = llvm.load %42 : !llvm.ptr -> f32
+  %44 = arith.addf %38, %43 : f32
+  %45 = arith.addi %37, %c1 : index
+  cf.br ^bb3(%45, %44 : index, f32)
+^bb5:  // pred: ^bb3
+  %46 = arith.addi %23, %c1 : index
+  cf.br ^bb1(%46, %38 : index, f32)
+^bb6:  // pred: ^bb1
+  llvm.store %24, %15 : f32, !llvm.ptr
+  return %21 : memref<f32>
+}
+
+// -----// IR Dump After ArithExpandOps (arith-expand) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %2 = llvm.mlir.constant(1 : index) : i64
+  %3 = llvm.mlir.null : !llvm.ptr
+  %4 = llvm.getelementptr %3[1] : (!llvm.ptr) -> !llvm.ptr, f32
+  %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+  %6 = llvm.mlir.constant(64 : index) : i64
+  %7 = llvm.add %5, %6  : i64
+  %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+  %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+  %10 = llvm.mlir.constant(1 : index) : i64
+  %11 = llvm.sub %6, %10  : i64
+  %12 = llvm.add %9, %11  : i64
+  %13 = llvm.urem %12, %6  : i64
+  %14 = llvm.sub %12, %13  : i64
+  %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+  %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+  %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+  %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+  %19 = llvm.mlir.constant(0 : index) : i64
+  %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+  %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+  llvm.store %cst, %15 : f32, !llvm.ptr
+  %22 = llvm.load %15 : !llvm.ptr -> f32
+  cf.br ^bb1(%c0, %22 : index, f32)
+^bb1(%23: index, %24: f32):  // 2 preds: ^bb0, ^bb5
+  %25 = builtin.unrealized_conversion_cast %23 : index to i64
+  %26 = arith.cmpi slt, %23, %c128 : index
+  cf.cond_br %26, ^bb2, ^bb6
+^bb2:  // pred: ^bb1
+  %27 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %28 = llvm.getelementptr %27[%25] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %29 = llvm.load %28 : !llvm.ptr -> i64
+  %30 = builtin.unrealized_conversion_cast %29 : i64 to index
+  %31 = arith.addi %23, %c1 : index
+  %32 = builtin.unrealized_conversion_cast %31 : index to i64
+  %33 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %34 = llvm.getelementptr %33[%32] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %35 = llvm.load %34 : !llvm.ptr -> i64
+  %36 = builtin.unrealized_conversion_cast %35 : i64 to index
+  cf.br ^bb3(%30, %24 : index, f32)
+^bb3(%37: index, %38: f32):  // 2 preds: ^bb2, ^bb4
+  %39 = builtin.unrealized_conversion_cast %37 : index to i64
+  %40 = arith.cmpi slt, %37, %36 : index
+  cf.cond_br %40, ^bb4, ^bb5
+^bb4:  // pred: ^bb3
+  %41 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %42 = llvm.getelementptr %41[%39] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+  %43 = llvm.load %42 : !llvm.ptr -> f32
+  %44 = arith.addf %38, %43 : f32
+  %45 = arith.addi %37, %c1 : index
+  cf.br ^bb3(%45, %44 : index, f32)
+^bb5:  // pred: ^bb3
+  %46 = arith.addi %23, %c1 : index
+  cf.br ^bb1(%46, %38 : index, f32)
+^bb6:  // pred: ^bb1
+  llvm.store %24, %15 : f32, !llvm.ptr
+  return %21 : memref<f32>
+}
+
+// -----// IR Dump After ConvertMathToLLVMPass (convert-math-to-llvm) //----- //
+func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+  %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+  %c128 = arith.constant 128 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %2 = llvm.mlir.constant(1 : index) : i64
+  %3 = llvm.mlir.null : !llvm.ptr
+  %4 = llvm.getelementptr %3[1] : (!llvm.ptr) -> !llvm.ptr, f32
+  %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+  %6 = llvm.mlir.constant(64 : index) : i64
+  %7 = llvm.add %5, %6  : i64
+  %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+  %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+  %10 = llvm.mlir.constant(1 : index) : i64
+  %11 = llvm.sub %6, %10  : i64
+  %12 = llvm.add %9, %11  : i64
+  %13 = llvm.urem %12, %6  : i64
+  %14 = llvm.sub %12, %13  : i64
+  %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+  %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+  %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+  %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+  %19 = llvm.mlir.constant(0 : index) : i64
+  %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+  %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+  llvm.store %cst, %15 : f32, !llvm.ptr
+  %22 = llvm.load %15 : !llvm.ptr -> f32
+  cf.br ^bb1(%c0, %22 : index, f32)
+^bb1(%23: index, %24: f32):  // 2 preds: ^bb0, ^bb5
+  %25 = builtin.unrealized_conversion_cast %23 : index to i64
+  %26 = arith.cmpi slt, %23, %c128 : index
+  cf.cond_br %26, ^bb2, ^bb6
+^bb2:  // pred: ^bb1
+  %27 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %28 = llvm.getelementptr %27[%25] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %29 = llvm.load %28 : !llvm.ptr -> i64
+  %30 = builtin.unrealized_conversion_cast %29 : i64 to index
+  %31 = arith.addi %23, %c1 : index
+  %32 = builtin.unrealized_conversion_cast %31 : index to i64
+  %33 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %34 = llvm.getelementptr %33[%32] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+  %35 = llvm.load %34 : !llvm.ptr -> i64
+  %36 = builtin.unrealized_conversion_cast %35 : i64 to index
+  cf.br ^bb3(%30, %24 : index, f32)
+^bb3(%37: index, %38: f32):  // 2 preds: ^bb2, ^bb4
+  %39 = builtin.unrealized_conversion_cast %37 : index to i64
+  %40 = arith.cmpi slt, %37, %36 : index
+  cf.cond_br %40, ^bb4, ^bb5
+^bb4:  // pred: ^bb3
+  %41 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+  %42 = llvm.getelementptr %41[%39] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+  %43 = llvm.load %42 : !llvm.ptr -> f32
+  %44 = arith.addf %38, %43 : f32
+  %45 = arith.addi %37, %c1 : index
+  cf.br ^bb3(%45, %44 : index, f32)
+^bb5:  // pred: ^bb3
+  %46 = arith.addi %23, %c1 : index
+  cf.br ^bb1(%46, %38 : index, f32)
+^bb6:  // pred: ^bb1
+  llvm.store %24, %15 : f32, !llvm.ptr
+  return %21 : memref<f32>
+}
+
+// -----// IR Dump After ConvertMathToLibm (convert-math-to-libm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %3 = llvm.mlir.null : !llvm.ptr
+    %4 = llvm.getelementptr %3[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+    %6 = llvm.mlir.constant(64 : index) : i64
+    %7 = llvm.add %5, %6  : i64
+    %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+    %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+    %10 = llvm.mlir.constant(1 : index) : i64
+    %11 = llvm.sub %6, %10  : i64
+    %12 = llvm.add %9, %11  : i64
+    %13 = llvm.urem %12, %6  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.mlir.constant(0 : index) : i64
+    %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %cst, %15 : f32, !llvm.ptr
+    %22 = llvm.load %15 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %22 : index, f32)
+  ^bb1(%23: index, %24: f32):  // 2 preds: ^bb0, ^bb5
+    %25 = builtin.unrealized_conversion_cast %23 : index to i64
+    %26 = arith.cmpi slt, %23, %c128 : index
+    cf.cond_br %26, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %27 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %28 = llvm.getelementptr %27[%25] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %29 = llvm.load %28 : !llvm.ptr -> i64
+    %30 = builtin.unrealized_conversion_cast %29 : i64 to index
+    %31 = arith.addi %23, %c1 : index
+    %32 = builtin.unrealized_conversion_cast %31 : index to i64
+    %33 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %34 = llvm.getelementptr %33[%32] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %35 = llvm.load %34 : !llvm.ptr -> i64
+    %36 = builtin.unrealized_conversion_cast %35 : i64 to index
+    cf.br ^bb3(%30, %24 : index, f32)
+  ^bb3(%37: index, %38: f32):  // 2 preds: ^bb2, ^bb4
+    %39 = builtin.unrealized_conversion_cast %37 : index to i64
+    %40 = arith.cmpi slt, %37, %36 : index
+    cf.cond_br %40, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %41 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %42 = llvm.getelementptr %41[%39] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %43 = llvm.load %42 : !llvm.ptr -> f32
+    %44 = arith.addf %38, %43 : f32
+    %45 = arith.addi %37, %c1 : index
+    cf.br ^bb3(%45, %44 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %46 = arith.addi %23, %c1 : index
+    cf.br ^bb1(%46, %38 : index, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %24, %15 : f32, !llvm.ptr
+    return %21 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertComplexToLibm (convert-complex-to-libm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %c128 = arith.constant 128 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %3 = llvm.mlir.null : !llvm.ptr
+    %4 = llvm.getelementptr %3[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %5 = llvm.ptrtoint %4 : !llvm.ptr to i64
+    %6 = llvm.mlir.constant(64 : index) : i64
+    %7 = llvm.add %5, %6  : i64
+    %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
+    %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
+    %10 = llvm.mlir.constant(1 : index) : i64
+    %11 = llvm.sub %6, %10  : i64
+    %12 = llvm.add %9, %11  : i64
+    %13 = llvm.urem %12, %6  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %8, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.mlir.constant(0 : index) : i64
+    %20 = llvm.insertvalue %19, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %21 = builtin.unrealized_conversion_cast %20 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %cst, %15 : f32, !llvm.ptr
+    %22 = llvm.load %15 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %22 : index, f32)
+  ^bb1(%23: index, %24: f32):  // 2 preds: ^bb0, ^bb5
+    %25 = builtin.unrealized_conversion_cast %23 : index to i64
+    %26 = arith.cmpi slt, %23, %c128 : index
+    cf.cond_br %26, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %27 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %28 = llvm.getelementptr %27[%25] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %29 = llvm.load %28 : !llvm.ptr -> i64
+    %30 = builtin.unrealized_conversion_cast %29 : i64 to index
+    %31 = arith.addi %23, %c1 : index
+    %32 = builtin.unrealized_conversion_cast %31 : index to i64
+    %33 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %34 = llvm.getelementptr %33[%32] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %35 = llvm.load %34 : !llvm.ptr -> i64
+    %36 = builtin.unrealized_conversion_cast %35 : i64 to index
+    cf.br ^bb3(%30, %24 : index, f32)
+  ^bb3(%37: index, %38: f32):  // 2 preds: ^bb2, ^bb4
+    %39 = builtin.unrealized_conversion_cast %37 : index to i64
+    %40 = arith.cmpi slt, %37, %36 : index
+    cf.cond_br %40, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %41 = llvm.extractvalue %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %42 = llvm.getelementptr %41[%39] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %43 = llvm.load %42 : !llvm.ptr -> f32
+    %44 = arith.addf %38, %43 : f32
+    %45 = arith.addi %37, %c1 : index
+    cf.br ^bb3(%45, %44 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %46 = arith.addi %23, %c1 : index
+    cf.br ^bb1(%46, %38 : index, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %24, %15 : f32, !llvm.ptr
+    return %21 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertVectorToLLVMPass (convert-vector-to-llvm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.constant(0 : index) : i64
+    %1 = llvm.mlir.constant(64 : index) : i64
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %cst = arith.constant 0.000000e+00 : f32
+    %c1 = arith.constant 1 : index
+    %c0 = arith.constant 0 : index
+    %c128 = arith.constant 128 : index
+    %3 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %4 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %5 = llvm.mlir.null : !llvm.ptr
+    %6 = llvm.getelementptr %5[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %7 = llvm.ptrtoint %6 : !llvm.ptr to i64
+    %8 = llvm.add %7, %1  : i64
+    %9 = llvm.call @malloc(%8) : (i64) -> !llvm.ptr
+    %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
+    %11 = llvm.sub %1, %2  : i64
+    %12 = llvm.add %10, %11  : i64
+    %13 = llvm.urem %12, %1  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %9, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.insertvalue %0, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %20 = builtin.unrealized_conversion_cast %19 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %cst, %15 : f32, !llvm.ptr
+    %21 = llvm.load %15 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %21 : index, f32)
+  ^bb1(%22: index, %23: f32):  // 2 preds: ^bb0, ^bb5
+    %24 = builtin.unrealized_conversion_cast %22 : index to i64
+    %25 = arith.cmpi slt, %22, %c128 : index
+    cf.cond_br %25, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %26 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.getelementptr %26[%24] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %28 = llvm.load %27 : !llvm.ptr -> i64
+    %29 = builtin.unrealized_conversion_cast %28 : i64 to index
+    %30 = arith.addi %22, %c1 : index
+    %31 = builtin.unrealized_conversion_cast %30 : index to i64
+    %32 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %33 = llvm.getelementptr %32[%31] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %34 = llvm.load %33 : !llvm.ptr -> i64
+    %35 = builtin.unrealized_conversion_cast %34 : i64 to index
+    cf.br ^bb3(%29, %23 : index, f32)
+  ^bb3(%36: index, %37: f32):  // 2 preds: ^bb2, ^bb4
+    %38 = builtin.unrealized_conversion_cast %36 : index to i64
+    %39 = arith.cmpi slt, %36, %35 : index
+    cf.cond_br %39, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %40 = llvm.extractvalue %4[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %41 = llvm.getelementptr %40[%38] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %42 = llvm.load %41 : !llvm.ptr -> f32
+    %43 = arith.addf %37, %42 : f32
+    %44 = arith.addi %36, %c1 : index
+    cf.br ^bb3(%44, %43 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %45 = arith.addi %22, %c1 : index
+    cf.br ^bb1(%45, %37 : index, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %23, %15 : f32, !llvm.ptr
+    return %20 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertComplexToLLVMPass (convert-complex-to-llvm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.constant(0 : index) : i64
+    %1 = llvm.mlir.constant(64 : index) : i64
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %cst = arith.constant 0.000000e+00 : f32
+    %c1 = arith.constant 1 : index
+    %c0 = arith.constant 0 : index
+    %c128 = arith.constant 128 : index
+    %3 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %4 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %5 = llvm.mlir.null : !llvm.ptr
+    %6 = llvm.getelementptr %5[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %7 = llvm.ptrtoint %6 : !llvm.ptr to i64
+    %8 = llvm.add %7, %1  : i64
+    %9 = llvm.call @malloc(%8) : (i64) -> !llvm.ptr
+    %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
+    %11 = llvm.sub %1, %2  : i64
+    %12 = llvm.add %10, %11  : i64
+    %13 = llvm.urem %12, %1  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %9, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.insertvalue %0, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %20 = builtin.unrealized_conversion_cast %19 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %cst, %15 : f32, !llvm.ptr
+    %21 = llvm.load %15 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %21 : index, f32)
+  ^bb1(%22: index, %23: f32):  // 2 preds: ^bb0, ^bb5
+    %24 = builtin.unrealized_conversion_cast %22 : index to i64
+    %25 = arith.cmpi slt, %22, %c128 : index
+    cf.cond_br %25, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %26 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.getelementptr %26[%24] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %28 = llvm.load %27 : !llvm.ptr -> i64
+    %29 = builtin.unrealized_conversion_cast %28 : i64 to index
+    %30 = arith.addi %22, %c1 : index
+    %31 = builtin.unrealized_conversion_cast %30 : index to i64
+    %32 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %33 = llvm.getelementptr %32[%31] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %34 = llvm.load %33 : !llvm.ptr -> i64
+    %35 = builtin.unrealized_conversion_cast %34 : i64 to index
+    cf.br ^bb3(%29, %23 : index, f32)
+  ^bb3(%36: index, %37: f32):  // 2 preds: ^bb2, ^bb4
+    %38 = builtin.unrealized_conversion_cast %36 : index to i64
+    %39 = arith.cmpi slt, %36, %35 : index
+    cf.cond_br %39, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %40 = llvm.extractvalue %4[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %41 = llvm.getelementptr %40[%38] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %42 = llvm.load %41 : !llvm.ptr -> f32
+    %43 = arith.addf %37, %42 : f32
+    %44 = arith.addi %36, %c1 : index
+    cf.br ^bb3(%44, %43 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %45 = arith.addi %22, %c1 : index
+    cf.br ^bb1(%45, %37 : index, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %23, %15 : f32, !llvm.ptr
+    return %20 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertVectorToLLVMPass (convert-vector-to-llvm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  func.func @Reduce2D.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> memref<f32> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.constant(0 : index) : i64
+    %1 = llvm.mlir.constant(64 : index) : i64
+    %2 = llvm.mlir.constant(1 : index) : i64
+    %cst = arith.constant 0.000000e+00 : f32
+    %c1 = arith.constant 1 : index
+    %c0 = arith.constant 0 : index
+    %c128 = arith.constant 128 : index
+    %3 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %4 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %5 = llvm.mlir.null : !llvm.ptr
+    %6 = llvm.getelementptr %5[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %7 = llvm.ptrtoint %6 : !llvm.ptr to i64
+    %8 = llvm.add %7, %1  : i64
+    %9 = llvm.call @malloc(%8) : (i64) -> !llvm.ptr
+    %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
+    %11 = llvm.sub %1, %2  : i64
+    %12 = llvm.add %10, %11  : i64
+    %13 = llvm.urem %12, %1  : i64
+    %14 = llvm.sub %12, %13  : i64
+    %15 = llvm.inttoptr %14 : i64 to !llvm.ptr
+    %16 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %17 = llvm.insertvalue %9, %16[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %18 = llvm.insertvalue %15, %17[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %19 = llvm.insertvalue %0, %18[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %20 = builtin.unrealized_conversion_cast %19 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %cst, %15 : f32, !llvm.ptr
+    %21 = llvm.load %15 : !llvm.ptr -> f32
+    cf.br ^bb1(%c0, %21 : index, f32)
+  ^bb1(%22: index, %23: f32):  // 2 preds: ^bb0, ^bb5
+    %24 = builtin.unrealized_conversion_cast %22 : index to i64
+    %25 = arith.cmpi slt, %22, %c128 : index
+    cf.cond_br %25, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %26 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.getelementptr %26[%24] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %28 = llvm.load %27 : !llvm.ptr -> i64
+    %29 = builtin.unrealized_conversion_cast %28 : i64 to index
+    %30 = arith.addi %22, %c1 : index
+    %31 = builtin.unrealized_conversion_cast %30 : index to i64
+    %32 = llvm.extractvalue %3[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %33 = llvm.getelementptr %32[%31] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %34 = llvm.load %33 : !llvm.ptr -> i64
+    %35 = builtin.unrealized_conversion_cast %34 : i64 to index
+    cf.br ^bb3(%29, %23 : index, f32)
+  ^bb3(%36: index, %37: f32):  // 2 preds: ^bb2, ^bb4
+    %38 = builtin.unrealized_conversion_cast %36 : index to i64
+    %39 = arith.cmpi slt, %36, %35 : index
+    cf.cond_br %39, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %40 = llvm.extractvalue %4[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %41 = llvm.getelementptr %40[%38] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %42 = llvm.load %41 : !llvm.ptr -> f32
+    %43 = arith.addf %37, %42 : f32
+    %44 = arith.addi %36, %c1 : index
+    cf.br ^bb3(%44, %43 : index, f32)
+  ^bb5:  // pred: ^bb3
+    %45 = arith.addi %22, %c1 : index
+    cf.br ^bb1(%45, %37 : index, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %23, %15 : f32, !llvm.ptr
+    return %20 : memref<f32>
+  }
+}
+
+
+// -----// IR Dump After ConvertOpenMPToLLVMPass (convert-openmp-to-llvm) //----- //
+module {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  llvm.func @Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64, %arg5: !llvm.ptr, %arg6: !llvm.ptr, %arg7: i64, %arg8: i64, %arg9: i64, %arg10: !llvm.ptr, %arg11: !llvm.ptr, %arg12: i64, %arg13: i64, %arg14: i64, %arg15: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %arg2, %2[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.insertvalue %arg3, %3[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.insertvalue %arg4, %4[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = builtin.unrealized_conversion_cast %5 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xindex>
+    %7 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %8 = llvm.insertvalue %arg10, %7[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.insertvalue %arg11, %8[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.insertvalue %arg12, %9[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.insertvalue %arg13, %10[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.insertvalue %arg14, %11[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %13 = builtin.unrealized_conversion_cast %12 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
+    %14 = llvm.mlir.constant(0 : index) : i64
+    %15 = llvm.mlir.constant(64 : index) : i64
+    %16 = llvm.mlir.constant(1 : index) : i64
+    %17 = llvm.mlir.constant(0.000000e+00 : f32) : f32
+    %18 = llvm.mlir.constant(1 : index) : i64
+    %19 = llvm.mlir.constant(0 : index) : i64
+    %20 = llvm.mlir.constant(128 : index) : i64
+    %21 = builtin.unrealized_conversion_cast %6 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %22 = builtin.unrealized_conversion_cast %13 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %23 = llvm.mlir.null : !llvm.ptr
+    %24 = llvm.getelementptr %23[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %25 = llvm.ptrtoint %24 : !llvm.ptr to i64
+    %26 = llvm.add %25, %15  : i64
+    %27 = llvm.call @malloc(%26) : (i64) -> !llvm.ptr
+    %28 = llvm.ptrtoint %27 : !llvm.ptr to i64
+    %29 = llvm.sub %15, %16  : i64
+    %30 = llvm.add %28, %29  : i64
+    %31 = llvm.urem %30, %15  : i64
+    %32 = llvm.sub %30, %31  : i64
+    %33 = llvm.inttoptr %32 : i64 to !llvm.ptr
+    %34 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %35 = llvm.insertvalue %27, %34[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %36 = llvm.insertvalue %33, %35[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %37 = llvm.insertvalue %14, %36[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %38 = builtin.unrealized_conversion_cast %37 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %17, %33 : f32, !llvm.ptr
+    %39 = llvm.load %33 : !llvm.ptr -> f32
+    llvm.br ^bb1(%19, %39 : i64, f32)
+  ^bb1(%40: i64, %41: f32):  // 2 preds: ^bb0, ^bb5
+    %42 = builtin.unrealized_conversion_cast %40 : i64 to index
+    %43 = builtin.unrealized_conversion_cast %42 : index to i64
+    %44 = llvm.icmp "slt" %40, %20 : i64
+    llvm.cond_br %44, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %45 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %46 = llvm.getelementptr %45[%43] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %47 = llvm.load %46 : !llvm.ptr -> i64
+    %48 = builtin.unrealized_conversion_cast %47 : i64 to index
+    %49 = llvm.add %40, %18  : i64
+    %50 = builtin.unrealized_conversion_cast %49 : i64 to index
+    %51 = builtin.unrealized_conversion_cast %50 : index to i64
+    %52 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %53 = llvm.getelementptr %52[%51] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %54 = llvm.load %53 : !llvm.ptr -> i64
+    %55 = builtin.unrealized_conversion_cast %54 : i64 to index
+    llvm.br ^bb3(%47, %41 : i64, f32)
+  ^bb3(%56: i64, %57: f32):  // 2 preds: ^bb2, ^bb4
+    %58 = builtin.unrealized_conversion_cast %56 : i64 to index
+    %59 = builtin.unrealized_conversion_cast %58 : index to i64
+    %60 = llvm.icmp "slt" %56, %54 : i64
+    llvm.cond_br %60, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %61 = llvm.extractvalue %22[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %62 = llvm.getelementptr %61[%59] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %63 = llvm.load %62 : !llvm.ptr -> f32
+    %64 = llvm.fadd %57, %63  : f32
+    %65 = llvm.add %56, %18  : i64
+    llvm.br ^bb3(%65, %64 : i64, f32)
+  ^bb5:  // pred: ^bb3
+    %66 = llvm.add %40, %18  : i64
+    llvm.br ^bb1(%66, %57 : i64, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %41, %33 : f32, !llvm.ptr
+    llvm.return %37 : !llvm.struct<(ptr, ptr, i64)>
+  }
+  llvm.func @_mlir_ciface_Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: !llvm.ptr, %arg3: !llvm.ptr, %arg4: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) attributes {llvm.emit_c_interface} {
+    %0 = llvm.load %arg1 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.extractvalue %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.extractvalue %0[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.extractvalue %0[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.extractvalue %0[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = llvm.load %arg2 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %7 = llvm.extractvalue %6[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %8 = llvm.extractvalue %6[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.extractvalue %6[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.extractvalue %6[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.extractvalue %6[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.load %arg3 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %13 = llvm.extractvalue %12[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %14 = llvm.extractvalue %12[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %15 = llvm.extractvalue %12[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %16 = llvm.extractvalue %12[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %17 = llvm.extractvalue %12[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %18 = llvm.call @Reduce2D.z.0.main(%1, %2, %3, %4, %5, %7, %8, %9, %10, %11, %13, %14, %15, %16, %17, %arg4) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)>
+    llvm.store %18, %arg0 : !llvm.struct<(ptr, ptr, i64)>, !llvm.ptr
+    llvm.return
+  }
+}
+
+
+// -----// IR Dump After ConvertFuncToLLVMPass (convert-func-to-llvm) //----- //
+module attributes {llvm.data_layout = ""} {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  llvm.func @Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64, %arg5: !llvm.ptr, %arg6: !llvm.ptr, %arg7: i64, %arg8: i64, %arg9: i64, %arg10: !llvm.ptr, %arg11: !llvm.ptr, %arg12: i64, %arg13: i64, %arg14: i64, %arg15: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %arg2, %2[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.insertvalue %arg3, %3[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.insertvalue %arg4, %4[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = builtin.unrealized_conversion_cast %5 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xindex>
+    %7 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %8 = llvm.insertvalue %arg10, %7[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.insertvalue %arg11, %8[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.insertvalue %arg12, %9[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.insertvalue %arg13, %10[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.insertvalue %arg14, %11[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %13 = builtin.unrealized_conversion_cast %12 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
+    %14 = llvm.mlir.constant(0 : index) : i64
+    %15 = llvm.mlir.constant(64 : index) : i64
+    %16 = llvm.mlir.constant(1 : index) : i64
+    %17 = llvm.mlir.constant(0.000000e+00 : f32) : f32
+    %18 = llvm.mlir.constant(1 : index) : i64
+    %19 = llvm.mlir.constant(0 : index) : i64
+    %20 = llvm.mlir.constant(128 : index) : i64
+    %21 = builtin.unrealized_conversion_cast %6 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %22 = builtin.unrealized_conversion_cast %13 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %23 = llvm.mlir.null : !llvm.ptr
+    %24 = llvm.getelementptr %23[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %25 = llvm.ptrtoint %24 : !llvm.ptr to i64
+    %26 = llvm.add %25, %15  : i64
+    %27 = llvm.call @malloc(%26) : (i64) -> !llvm.ptr
+    %28 = llvm.ptrtoint %27 : !llvm.ptr to i64
+    %29 = llvm.sub %15, %16  : i64
+    %30 = llvm.add %28, %29  : i64
+    %31 = llvm.urem %30, %15  : i64
+    %32 = llvm.sub %30, %31  : i64
+    %33 = llvm.inttoptr %32 : i64 to !llvm.ptr
+    %34 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %35 = llvm.insertvalue %27, %34[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %36 = llvm.insertvalue %33, %35[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %37 = llvm.insertvalue %14, %36[2] : !llvm.struct<(ptr, ptr, i64)> 
+    %38 = builtin.unrealized_conversion_cast %37 : !llvm.struct<(ptr, ptr, i64)> to memref<f32>
+    llvm.store %17, %33 : f32, !llvm.ptr
+    %39 = llvm.load %33 : !llvm.ptr -> f32
+    llvm.br ^bb1(%19, %39 : i64, f32)
+  ^bb1(%40: i64, %41: f32):  // 2 preds: ^bb0, ^bb5
+    %42 = builtin.unrealized_conversion_cast %40 : i64 to index
+    %43 = builtin.unrealized_conversion_cast %42 : index to i64
+    %44 = llvm.icmp "slt" %40, %20 : i64
+    llvm.cond_br %44, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %45 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %46 = llvm.getelementptr %45[%43] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %47 = llvm.load %46 : !llvm.ptr -> i64
+    %48 = builtin.unrealized_conversion_cast %47 : i64 to index
+    %49 = llvm.add %40, %18  : i64
+    %50 = builtin.unrealized_conversion_cast %49 : i64 to index
+    %51 = builtin.unrealized_conversion_cast %50 : index to i64
+    %52 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %53 = llvm.getelementptr %52[%51] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %54 = llvm.load %53 : !llvm.ptr -> i64
+    %55 = builtin.unrealized_conversion_cast %54 : i64 to index
+    llvm.br ^bb3(%47, %41 : i64, f32)
+  ^bb3(%56: i64, %57: f32):  // 2 preds: ^bb2, ^bb4
+    %58 = builtin.unrealized_conversion_cast %56 : i64 to index
+    %59 = builtin.unrealized_conversion_cast %58 : index to i64
+    %60 = llvm.icmp "slt" %56, %54 : i64
+    llvm.cond_br %60, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %61 = llvm.extractvalue %22[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %62 = llvm.getelementptr %61[%59] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %63 = llvm.load %62 : !llvm.ptr -> f32
+    %64 = llvm.fadd %57, %63  : f32
+    %65 = llvm.add %56, %18  : i64
+    llvm.br ^bb3(%65, %64 : i64, f32)
+  ^bb5:  // pred: ^bb3
+    %66 = llvm.add %40, %18  : i64
+    llvm.br ^bb1(%66, %57 : i64, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %41, %33 : f32, !llvm.ptr
+    llvm.return %37 : !llvm.struct<(ptr, ptr, i64)>
+  }
+  llvm.func @_mlir_ciface_Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: !llvm.ptr, %arg3: !llvm.ptr, %arg4: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) attributes {llvm.emit_c_interface} {
+    %0 = llvm.load %arg1 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.extractvalue %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.extractvalue %0[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.extractvalue %0[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.extractvalue %0[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = llvm.load %arg2 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %7 = llvm.extractvalue %6[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %8 = llvm.extractvalue %6[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.extractvalue %6[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.extractvalue %6[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.extractvalue %6[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.load %arg3 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %13 = llvm.extractvalue %12[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %14 = llvm.extractvalue %12[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %15 = llvm.extractvalue %12[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %16 = llvm.extractvalue %12[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %17 = llvm.extractvalue %12[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %18 = llvm.call @Reduce2D.z.0.main(%1, %2, %3, %4, %5, %7, %8, %9, %10, %11, %13, %14, %15, %16, %17, %arg4) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)>
+    llvm.store %18, %arg0 : !llvm.struct<(ptr, ptr, i64)>, !llvm.ptr
+    llvm.return
+  }
+}
+
+
+// -----// IR Dump After ReconcileUnrealizedCasts (reconcile-unrealized-casts) //----- //
+module attributes {llvm.data_layout = ""} {
+  llvm.func @malloc(i64) -> !llvm.ptr
+  llvm.func @Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64, %arg5: !llvm.ptr, %arg6: !llvm.ptr, %arg7: i64, %arg8: i64, %arg9: i64, %arg10: !llvm.ptr, %arg11: !llvm.ptr, %arg12: i64, %arg13: i64, %arg14: i64, %arg15: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)> attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %arg2, %2[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.insertvalue %arg3, %3[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.insertvalue %arg4, %4[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %7 = llvm.insertvalue %arg10, %6[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %8 = llvm.insertvalue %arg11, %7[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.insertvalue %arg12, %8[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.insertvalue %arg13, %9[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.insertvalue %arg14, %10[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.mlir.constant(0 : index) : i64
+    %13 = llvm.mlir.constant(64 : index) : i64
+    %14 = llvm.mlir.constant(1 : index) : i64
+    %15 = llvm.mlir.constant(0.000000e+00 : f32) : f32
+    %16 = llvm.mlir.constant(1 : index) : i64
+    %17 = llvm.mlir.constant(0 : index) : i64
+    %18 = llvm.mlir.constant(128 : index) : i64
+    %19 = llvm.mlir.null : !llvm.ptr
+    %20 = llvm.getelementptr %19[1] : (!llvm.ptr) -> !llvm.ptr, f32
+    %21 = llvm.ptrtoint %20 : !llvm.ptr to i64
+    %22 = llvm.add %21, %13  : i64
+    %23 = llvm.call @malloc(%22) : (i64) -> !llvm.ptr
+    %24 = llvm.ptrtoint %23 : !llvm.ptr to i64
+    %25 = llvm.sub %13, %14  : i64
+    %26 = llvm.add %24, %25  : i64
+    %27 = llvm.urem %26, %13  : i64
+    %28 = llvm.sub %26, %27  : i64
+    %29 = llvm.inttoptr %28 : i64 to !llvm.ptr
+    %30 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64)>
+    %31 = llvm.insertvalue %23, %30[0] : !llvm.struct<(ptr, ptr, i64)> 
+    %32 = llvm.insertvalue %29, %31[1] : !llvm.struct<(ptr, ptr, i64)> 
+    %33 = llvm.insertvalue %12, %32[2] : !llvm.struct<(ptr, ptr, i64)> 
+    llvm.store %15, %29 : f32, !llvm.ptr
+    %34 = llvm.load %29 : !llvm.ptr -> f32
+    llvm.br ^bb1(%17, %34 : i64, f32)
+  ^bb1(%35: i64, %36: f32):  // 2 preds: ^bb0, ^bb5
+    %37 = llvm.icmp "slt" %35, %18 : i64
+    llvm.cond_br %37, ^bb2, ^bb6
+  ^bb2:  // pred: ^bb1
+    %38 = llvm.extractvalue %5[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %39 = llvm.getelementptr %38[%35] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %40 = llvm.load %39 : !llvm.ptr -> i64
+    %41 = llvm.add %35, %16  : i64
+    %42 = llvm.extractvalue %5[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %43 = llvm.getelementptr %42[%41] : (!llvm.ptr, i64) -> !llvm.ptr, i64
+    %44 = llvm.load %43 : !llvm.ptr -> i64
+    llvm.br ^bb3(%40, %36 : i64, f32)
+  ^bb3(%45: i64, %46: f32):  // 2 preds: ^bb2, ^bb4
+    %47 = llvm.icmp "slt" %45, %44 : i64
+    llvm.cond_br %47, ^bb4, ^bb5
+  ^bb4:  // pred: ^bb3
+    %48 = llvm.extractvalue %11[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %49 = llvm.getelementptr %48[%45] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %50 = llvm.load %49 : !llvm.ptr -> f32
+    %51 = llvm.fadd %46, %50  : f32
+    %52 = llvm.add %45, %16  : i64
+    llvm.br ^bb3(%52, %51 : i64, f32)
+  ^bb5:  // pred: ^bb3
+    %53 = llvm.add %35, %16  : i64
+    llvm.br ^bb1(%53, %46 : i64, f32)
+  ^bb6:  // pred: ^bb1
+    llvm.store %36, %29 : f32, !llvm.ptr
+    llvm.return %33 : !llvm.struct<(ptr, ptr, i64)>
+  }
+  llvm.func @_mlir_ciface_Reduce2D.z.0.main(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: !llvm.ptr, %arg3: !llvm.ptr, %arg4: !llvm.struct<(array<2 x i64>, array<3 x i64>)>) attributes {llvm.emit_c_interface} {
+    %0 = llvm.load %arg1 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %1 = llvm.extractvalue %0[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %2 = llvm.extractvalue %0[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.extractvalue %0[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %4 = llvm.extractvalue %0[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %5 = llvm.extractvalue %0[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %6 = llvm.load %arg2 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %7 = llvm.extractvalue %6[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %8 = llvm.extractvalue %6[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %9 = llvm.extractvalue %6[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %10 = llvm.extractvalue %6[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %11 = llvm.extractvalue %6[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %12 = llvm.load %arg3 : !llvm.ptr -> !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
+    %13 = llvm.extractvalue %12[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %14 = llvm.extractvalue %12[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %15 = llvm.extractvalue %12[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %16 = llvm.extractvalue %12[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %17 = llvm.extractvalue %12[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
+    %18 = llvm.call @Reduce2D.z.0.main(%1, %2, %3, %4, %5, %7, %8, %9, %10, %11, %13, %14, %15, %16, %17, %arg4) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.ptr, !llvm.ptr, i64, i64, i64, !llvm.struct<(array<2 x i64>, array<3 x i64>)>) -> !llvm.struct<(ptr, ptr, i64)>
+    llvm.store %18, %arg0 : !llvm.struct<(ptr, ptr, i64)>, !llvm.ptr
+    llvm.return
+  }
+}
+
+
