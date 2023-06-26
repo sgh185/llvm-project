@@ -39,17 +39,17 @@ define { { ptr, ptr, i64, [1 x i64], [1 x i64] }, { [1 x i64], [1 x i64] } } @Sp
   %40 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %39, i64 %18, 2
   %41 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %40, i64 %19, 3, 0
   %42 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %41, i64 %20, 4, 0
-  %43 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 128) to i64))
+  %43 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 16) to i64))
   %44 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } undef, ptr %43, 0
   %45 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %44, ptr %43, 1
   %46 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %45, i64 0, 2
-  %47 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %46, i64 128, 3, 0
+  %47 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %46, i64 16, 3, 0
   %48 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %47, i64 1, 4, 0
   br label %49
 
 49:                                               ; preds = %52, %22
   %50 = phi i64 [ %54, %52 ], [ 0, %22 ]
-  %51 = icmp slt i64 %50, 128
+  %51 = icmp slt i64 %50, 16
   br i1 %51, label %52, label %55
 
 52:                                               ; preds = %49
@@ -85,7 +85,7 @@ omp.par.outlined.exit44:                          ; preds = %omp_parallel
 
 omp.par.exit.split:                               ; preds = %omp.par.outlined.exit44
   %56 = insertvalue { { ptr, ptr, i64, [1 x i64], [1 x i64] }, { [1 x i64], [1 x i64] } } undef, { ptr, ptr, i64, [1 x i64], [1 x i64] } %48, 0
-  %57 = insertvalue { { ptr, ptr, i64, [1 x i64], [1 x i64] }, { [1 x i64], [1 x i64] } } %56, { [1 x i64], [1 x i64] } { [1 x i64] [i64 128], [1 x i64] [i64 128] }, 1
+  %57 = insertvalue { { ptr, ptr, i64, [1 x i64], [1 x i64] }, { [1 x i64], [1 x i64] } } %56, { [1 x i64], [1 x i64] } { [1 x i64] [i64 16], [1 x i64] [i64 16] }, 1
   ret { { ptr, ptr, i64, [1 x i64], [1 x i64] }, { [1 x i64], [1 x i64] } } %57
 }
 
@@ -131,7 +131,7 @@ omp.par.region1:                                  ; preds = %omp.par.region
 
 omp_loop.preheader:                               ; preds = %omp.par.region1
   store i64 0, ptr %p.lowerbound39, align 4
-  store i64 127, ptr %p.upperbound40, align 4
+  store i64 15, ptr %p.upperbound40, align 4
   store i64 1, ptr %p.stride41, align 4
   %omp_global_thread_num42 = call i32 @__kmpc_global_thread_num(ptr @1)
   call void @__kmpc_for_static_init_8u(ptr @1, i32 %omp_global_thread_num42, i32 34, ptr %p.lastiter38, ptr %p.lowerbound39, ptr %p.upperbound40, ptr %p.stride41, i64 1, i64 0)

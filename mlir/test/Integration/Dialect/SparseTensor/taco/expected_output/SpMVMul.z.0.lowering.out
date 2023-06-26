@@ -1,13 +1,13 @@
 // -----// IR Dump After LinalgGeneralization (linalg-generalize-named-ops) //----- //
-func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
-  %0 = bufferization.alloc_tensor() : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-  %1 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> (d1)>, affine_map<(d0, d1) -> (d0)>], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
+func.func @SpMVMul.z.0.main(%arg0: tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
+  %0 = bufferization.alloc_tensor() : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  %1 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> (d1)>, affine_map<(d0, d1) -> (d0)>], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
   ^bb0(%in: f32, %in_0: f32, %out: f32):
     %2 = arith.mulf %in, %in_0 : f32
     %3 = arith.addf %out, %2 : f32
     linalg.yield %3 : f32
-  } -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-  return %1 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  } -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  return %1 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
 }
 
 // -----// IR Dump After PreSparsificationRewrite (pre-sparsification-rewrite) //----- //
@@ -15,44 +15,44 @@ func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{
 #map1 = affine_map<(d0, d1) -> (d1)>
 #map2 = affine_map<(d0, d1) -> (d0)>
 module {
-  func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
-    %0 = bufferization.alloc_tensor() : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %1 = linalg.generic {indexing_maps = [#map, #map1, #map2], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
+  func.func @SpMVMul.z.0.main(%arg0: tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
+    %0 = bufferization.alloc_tensor() : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %1 = linalg.generic {indexing_maps = [#map, #map1, #map2], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
     ^bb0(%in: f32, %in_0: f32, %out: f32):
       %2 = arith.mulf %in, %in_0 : f32
       %3 = arith.addf %out, %2 : f32
       linalg.yield %3 : f32
-    } -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    return %1 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    } -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    return %1 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
   }
 }
 
 
 // -----// IR Dump After EmptyTensorToAllocTensor (empty-tensor-to-alloc-tensor) //----- //
-func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
-  %0 = bufferization.alloc_tensor() : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-  %1 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> (d1)>, affine_map<(d0, d1) -> (d0)>], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
+func.func @SpMVMul.z.0.main(%arg0: tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
+  %0 = bufferization.alloc_tensor() : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  %1 = linalg.generic {indexing_maps = [affine_map<(d0, d1) -> (d0, d1)>, affine_map<(d0, d1) -> (d1)>, affine_map<(d0, d1) -> (d0)>], iterator_types = ["parallel", "reduction"]} ins(%arg0, %arg1 : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) outs(%0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) {
   ^bb0(%in: f32, %in_0: f32, %out: f32):
     %2 = arith.mulf %in, %in_0 : f32
     %3 = arith.addf %out, %2 : f32
     linalg.yield %3 : f32
-  } -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-  return %1 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  } -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+  return %1 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
 }
 
 // -----// IR Dump After SparsificationPass (sparsification) //----- //
 module {
-  func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+  func.func @SpMVMul.z.0.main(%arg0: tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
-    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %1 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
-    %2 = sparse_tensor.coordinates %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
-    %3 = sparse_tensor.values %arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
-    %4 = sparse_tensor.values %arg1 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
-    %5 = sparse_tensor.values %0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
-    scf.parallel (%arg2) = (%c0) to (%c128) step (%c1) {
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %1 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %2 = sparse_tensor.coordinates %arg0 {level = 1 : index} : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %3 = sparse_tensor.values %arg0 : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
+    %4 = sparse_tensor.values %arg1 : tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
+    %5 = sparse_tensor.values %0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
+    scf.parallel (%arg2) = (%c0) to (%c16) step (%c1) {
       %7 = memref.load %5[%arg2] : memref<?xf32>
       %8 = memref.load %1[%arg2] : memref<?xindex>
       %9 = arith.addi %arg2, %c1 : index
@@ -72,25 +72,25 @@ module {
       memref.store %11, %5[%arg2] : memref<?xf32>
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    %6 = sparse_tensor.load %0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    return %6 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %6 = sparse_tensor.load %0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    return %6 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
   }
 }
 
 
 // -----// IR Dump After PostSparsificationRewrite (post-sparsification-rewrite) //----- //
 module {
-  func.func @SpMVMul.z.0.main(%arg0: tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+  func.func @SpMVMul.z.0.main(%arg0: tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg1: tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> attributes {llvm.emit_c_interface} {
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
-    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %1 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
-    %2 = sparse_tensor.coordinates %arg0 {level = 1 : index} : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
-    %3 = sparse_tensor.values %arg0 : tensor<128x128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
-    %4 = sparse_tensor.values %arg1 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
-    %5 = sparse_tensor.values %0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
-    scf.parallel (%arg2) = (%c0) to (%c128) step (%c1) {
+    %0 = bufferization.alloc_tensor() {bufferization.escape = [true]} : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %1 = sparse_tensor.positions %arg0 {level = 1 : index} : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %2 = sparse_tensor.coordinates %arg0 {level = 1 : index} : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xindex>
+    %3 = sparse_tensor.values %arg0 : tensor<16x32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>> to memref<?xf32>
+    %4 = sparse_tensor.values %arg1 : tensor<32xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
+    %5 = sparse_tensor.values %0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to memref<?xf32>
+    scf.parallel (%arg2) = (%c0) to (%c16) step (%c1) {
       %7 = memref.load %5[%arg2] : memref<?xf32>
       %8 = memref.load %1[%arg2] : memref<?xindex>
       %9 = arith.addi %arg2, %c1 : index
@@ -110,8 +110,8 @@ module {
       memref.store %11, %5[%arg2] : memref<?xf32>
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    %6 = sparse_tensor.load %0 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    return %6 : tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %6 = sparse_tensor.load %0 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    return %6 : tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
   }
 }
 
@@ -119,23 +119,23 @@ module {
 // -----// IR Dump After SparseTensorCodegen (sparse-tensor-codegen) //----- //
 module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg4: memref<?xf32>, %arg5: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> (memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
-    %c128_0 = arith.constant 128 : index
-    %alloc = memref.alloc(%c128_0) : memref<?xf32>
+    %c16_0 = arith.constant 16 : index
+    %alloc = memref.alloc(%c16_0) : memref<?xf32>
     %0 = sparse_tensor.storage_specifier.init : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
     %c0_1 = arith.constant 0 : index
-    %1 = sparse_tensor.storage_specifier.set %0  lvl_sz at 0 with %c128_0 : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %1 = sparse_tensor.storage_specifier.set %0  lvl_sz at 0 with %c16_0 : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
     %c1_2 = arith.constant 1 : index
-    %c128_3 = arith.constant 128 : index
-    %2 = arith.muli %c1_2, %c128_3 : index
+    %c16_3 = arith.constant 16 : index
+    %2 = arith.muli %c1_2, %c16_3 : index
     %cst = arith.constant 0.000000e+00 : f32
     %3 = sparse_tensor.storage_specifier.get %1  val_mem_sz : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
     %outBuffer, %newSize = sparse_tensor.push_back %3, %alloc, %cst, %2 : index, memref<?xf32>, f32, index
     %4 = sparse_tensor.storage_specifier.set %1  val_mem_sz with %newSize : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %5 = builtin.unrealized_conversion_cast %outBuffer, %4 : memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
+    %5 = builtin.unrealized_conversion_cast %outBuffer, %4 : memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
       %7 = memref.load %outBuffer[%arg6] : memref<?xf32>
       %8 = memref.load %arg0[%arg6] : memref<?xindex>
       %9 = arith.addi %arg6, %c1 : index
@@ -155,7 +155,7 @@ module {
       memref.store %11, %outBuffer[%arg6] : memref<?xf32>
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    %6 = builtin.unrealized_conversion_cast %outBuffer, %4 : memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to tensor<128xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %6 = builtin.unrealized_conversion_cast %outBuffer, %4 : memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>> to tensor<16xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
     return %outBuffer, %4 : memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
   }
 }
@@ -164,19 +164,19 @@ module {
 // -----// IR Dump After SparseBufferRewrite (sparse-buffer-rewrite) //----- //
 module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed" ] }>>, %arg4: memref<?xf32>, %arg5: !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) -> (memref<?xf32>, !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>) attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c2 = arith.constant 2 : index
     %c1 = arith.constant 1 : index
     %cst = arith.constant 0.000000e+00 : f32
     %c0 = arith.constant 0 : index
-    %alloc = memref.alloc(%c128) : memref<?xf32>
+    %alloc = memref.alloc(%c16) : memref<?xf32>
     %0 = sparse_tensor.storage_specifier.init : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %1 = sparse_tensor.storage_specifier.set %0  lvl_sz at 0 with %c128 : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
+    %1 = sparse_tensor.storage_specifier.set %0  lvl_sz at 0 with %c16 : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
     %2 = sparse_tensor.storage_specifier.get %1  val_mem_sz : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    %3 = arith.addi %2, %c128 : index
-    %4 = arith.cmpi ugt, %3, %c128 : index
+    %3 = arith.addi %2, %c16 : index
+    %4 = arith.cmpi ugt, %3, %c16 : index
     %5 = scf.if %4 -> (memref<?xf32>) {
-      %7 = scf.while (%arg6 = %c128) : (index) -> index {
+      %7 = scf.while (%arg6 = %c16) : (index) -> index {
         %9 = arith.muli %arg6, %c2 : index
         %10 = arith.cmpi ugt, %3, %9 : index
         scf.condition(%10) %9 : index
@@ -189,10 +189,10 @@ module {
     } else {
       scf.yield %alloc : memref<?xf32>
     }
-    %subview = memref.subview %5[%2] [%c128] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
+    %subview = memref.subview %5[%2] [%c16] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
     linalg.fill ins(%cst : f32) outs(%subview : memref<?xf32, strided<[?], offset: ?>>)
     %6 = sparse_tensor.storage_specifier.set %1  val_mem_sz with %3 : !sparse_tensor.storage_specifier<#sparse_tensor.encoding<{ lvlTypes = [ "dense" ] }>>
-    scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
+    scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
       %7 = memref.load %5[%arg6] : memref<?xf32>
       %8 = memref.load %arg0[%arg6] : memref<?xindex>
       %9 = arith.addi %arg6, %c1 : index
@@ -220,23 +220,23 @@ module {
 // -----// IR Dump After StorageSpecifierToLLVM (sparse-storage-specifier-to-llvm) //----- //
 module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c2 = arith.constant 2 : index
     %c1 = arith.constant 1 : index
     %cst = arith.constant 0.000000e+00 : f32
     %c0 = arith.constant 0 : index
-    %alloc = memref.alloc(%c128) : memref<?xf32>
+    %alloc = memref.alloc(%c16) : memref<?xf32>
     %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %c0_i64 = arith.constant 0 : i64
     %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %2 = arith.index_cast %c128 : index to i64
+    %2 = arith.index_cast %c16 : index to i64
     %3 = llvm.insertvalue %2, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     %4 = llvm.extractvalue %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     %5 = arith.index_cast %4 : i64 to index
-    %6 = arith.addi %5, %c128 : index
-    %7 = arith.cmpi ugt, %6, %c128 : index
+    %6 = arith.addi %5, %c16 : index
+    %7 = arith.cmpi ugt, %6, %c16 : index
     %8 = scf.if %7 -> (memref<?xf32>) {
-      %11 = scf.while (%arg6 = %c128) : (index) -> index {
+      %11 = scf.while (%arg6 = %c16) : (index) -> index {
         %13 = arith.muli %arg6, %c2 : index
         %14 = arith.cmpi ugt, %6, %13 : index
         scf.condition(%14) %13 : index
@@ -249,11 +249,11 @@ module {
     } else {
       scf.yield %alloc : memref<?xf32>
     }
-    %subview = memref.subview %8[%5] [%c128] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
+    %subview = memref.subview %8[%5] [%c16] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
     linalg.fill ins(%cst : f32) outs(%subview : memref<?xf32, strided<[?], offset: ?>>)
     %9 = arith.index_cast %6 : index to i64
     %10 = llvm.insertvalue %9, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
+    scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
       %11 = memref.load %8[%arg6] : memref<?xf32>
       %12 = memref.load %arg0[%arg6] : memref<?xindex>
       %13 = arith.addi %arg6, %c1 : index
@@ -281,23 +281,23 @@ module {
 // -----// IR Dump After mlir::sparse_tensor::SparsificationAndBufferizationPass () //----- //
 module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c2 = arith.constant 2 : index
     %c1 = arith.constant 1 : index
     %cst = arith.constant 0.000000e+00 : f32
     %c0 = arith.constant 0 : index
-    %alloc = memref.alloc(%c128) : memref<?xf32>
+    %alloc = memref.alloc(%c16) : memref<?xf32>
     %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %c0_i64 = arith.constant 0 : i64
     %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %2 = arith.index_cast %c128 : index to i64
+    %2 = arith.index_cast %c16 : index to i64
     %3 = llvm.insertvalue %2, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     %4 = llvm.extractvalue %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     %5 = arith.index_cast %4 : i64 to index
-    %6 = arith.addi %5, %c128 : index
-    %7 = arith.cmpi ugt, %6, %c128 : index
+    %6 = arith.addi %5, %c16 : index
+    %7 = arith.cmpi ugt, %6, %c16 : index
     %8 = scf.if %7 -> (memref<?xf32>) {
-      %11 = scf.while (%arg6 = %c128) : (index) -> index {
+      %11 = scf.while (%arg6 = %c16) : (index) -> index {
         %13 = arith.muli %arg6, %c2 : index
         %14 = arith.cmpi ugt, %6, %13 : index
         scf.condition(%14) %13 : index
@@ -310,11 +310,11 @@ module {
     } else {
       scf.yield %alloc : memref<?xf32>
     }
-    %subview = memref.subview %8[%5] [%c128] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
+    %subview = memref.subview %8[%5] [%c16] [%c1] : memref<?xf32> to memref<?xf32, strided<[?], offset: ?>>
     linalg.fill ins(%cst : f32) outs(%subview : memref<?xf32, strided<[?], offset: ?>>)
     %9 = arith.index_cast %6 : index to i64
     %10 = llvm.insertvalue %9, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
+    scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
       %11 = memref.load %8[%arg6] : memref<?xf32>
       %12 = memref.load %arg0[%arg6] : memref<?xindex>
       %13 = arith.addi %arg6, %c1 : index
@@ -341,21 +341,21 @@ module {
 
 // -----// IR Dump After Canonicalizer (canonicalize) //----- //
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
-  %c128_i64 = arith.constant 128 : i64
-  %c128 = arith.constant 128 : index
+  %c16_i64 = arith.constant 16 : i64
+  %c16 = arith.constant 16 : index
   %c0 = arith.constant 0 : index
   %c0_i64 = arith.constant 0 : i64
   %c1 = arith.constant 1 : index
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %2 = llvm.insertvalue %c128_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  linalg.fill ins(%cst : f32) outs(%alloc : memref<128xf32>)
-  %3 = llvm.insertvalue %c128_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
-    %4 = memref.load %alloc[%arg6] : memref<128xf32>
+  %2 = llvm.insertvalue %c16_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  linalg.fill ins(%cst : f32) outs(%alloc : memref<16xf32>)
+  %3 = llvm.insertvalue %c16_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
+    %4 = memref.load %alloc[%arg6] : memref<16xf32>
     %5 = memref.load %arg0[%arg6] : memref<?xindex>
     %6 = arith.addi %arg6, %c1 : index
     %7 = memref.load %arg0[%6] : memref<?xindex>
@@ -371,7 +371,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
       }
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    memref.store %8, %alloc[%arg6] : memref<128xf32>
+    memref.store %8, %alloc[%arg6] : memref<16xf32>
     scf.yield
   } {"Emitted from" = "linalg.generic"}
   return %cast, %3 : memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>
@@ -379,21 +379,21 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
 
 // -----// IR Dump After FinalizingBufferize (finalizing-bufferize) //----- //
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
-  %c128_i64 = arith.constant 128 : i64
-  %c128 = arith.constant 128 : index
+  %c16_i64 = arith.constant 16 : i64
+  %c16 = arith.constant 16 : index
   %c0 = arith.constant 0 : index
   %c0_i64 = arith.constant 0 : i64
   %c1 = arith.constant 1 : index
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %2 = llvm.insertvalue %c128_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  linalg.fill ins(%cst : f32) outs(%alloc : memref<128xf32>)
-  %3 = llvm.insertvalue %c128_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
-    %4 = memref.load %alloc[%arg6] : memref<128xf32>
+  %2 = llvm.insertvalue %c16_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  linalg.fill ins(%cst : f32) outs(%alloc : memref<16xf32>)
+  %3 = llvm.insertvalue %c16_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
+    %4 = memref.load %alloc[%arg6] : memref<16xf32>
     %5 = memref.load %arg0[%arg6] : memref<?xindex>
     %6 = arith.addi %arg6, %c1 : index
     %7 = memref.load %arg0[%6] : memref<?xindex>
@@ -409,7 +409,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
       }
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    memref.store %8, %alloc[%arg6] : memref<128xf32>
+    memref.store %8, %alloc[%arg6] : memref<16xf32>
     scf.yield
   } {"Emitted from" = "linalg.generic"}
   return %cast, %3 : memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>
@@ -418,22 +418,22 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
 // -----// IR Dump After LinalgLowerToLoops (convert-linalg-to-loops) //----- //
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %2 = llvm.insertvalue %c128_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.for %arg6 = %c0 to %c128 step %c1 {
-    memref.store %cst, %alloc[%arg6] : memref<128xf32>
+  %2 = llvm.insertvalue %c16_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.for %arg6 = %c0 to %c16 step %c1 {
+    memref.store %cst, %alloc[%arg6] : memref<16xf32>
   }
-  %3 = llvm.insertvalue %c128_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
-    %4 = memref.load %alloc[%arg6] : memref<128xf32>
+  %3 = llvm.insertvalue %c16_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
+    %4 = memref.load %alloc[%arg6] : memref<16xf32>
     %5 = memref.load %arg0[%arg6] : memref<?xindex>
     %6 = arith.addi %arg6, %c1 : index
     %7 = memref.load %arg0[%6] : memref<?xindex>
@@ -449,7 +449,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
       }
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    memref.store %8, %alloc[%arg6] : memref<128xf32>
+    memref.store %8, %alloc[%arg6] : memref<16xf32>
     scf.yield
   } {"Emitted from" = "linalg.generic"}
   return %cast, %3 : memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>
@@ -458,22 +458,22 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
 // -----// IR Dump After ConvertVectorToSCF (convert-vector-to-scf) //----- //
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %2 = llvm.insertvalue %c128_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.for %arg6 = %c0 to %c128 step %c1 {
-    memref.store %cst, %alloc[%arg6] : memref<128xf32>
+  %2 = llvm.insertvalue %c16_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.for %arg6 = %c0 to %c16 step %c1 {
+    memref.store %cst, %alloc[%arg6] : memref<16xf32>
   }
-  %3 = llvm.insertvalue %c128_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.parallel (%arg6) = (%c0) to (%c128) step (%c1) {
-    %4 = memref.load %alloc[%arg6] : memref<128xf32>
+  %3 = llvm.insertvalue %c16_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.parallel (%arg6) = (%c0) to (%c16) step (%c1) {
+    %4 = memref.load %alloc[%arg6] : memref<16xf32>
     %5 = memref.load %arg0[%arg6] : memref<?xindex>
     %6 = arith.addi %arg6, %c1 : index
     %7 = memref.load %arg0[%6] : memref<?xindex>
@@ -489,7 +489,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
       }
       scf.yield
     } {"Emitted from" = "linalg.generic"}
-    memref.store %8, %alloc[%arg6] : memref<128xf32>
+    memref.store %8, %alloc[%arg6] : memref<16xf32>
     scf.yield
   } {"Emitted from" = "linalg.generic"}
   return %cast, %3 : memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>
@@ -513,25 +513,25 @@ module {
   }
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %alloc = memref.alloc() : memref<128xf32>
-    %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+    %alloc = memref.alloc() : memref<16xf32>
+    %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
     %0 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %1 = llvm.insertvalue %c0_i64, %0[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %2 = llvm.insertvalue %c128_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    scf.for %arg6 = %c0 to %c128 step %c1 {
-      memref.store %cst, %alloc[%arg6] : memref<128xf32>
+    %2 = llvm.insertvalue %c16_i64, %1[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    scf.for %arg6 = %c0 to %c16 step %c1 {
+      memref.store %cst, %alloc[%arg6] : memref<16xf32>
     }
-    %3 = llvm.insertvalue %c128_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %c16_i64, %2[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     %4 = llvm.mlir.constant(1 : i64) : i64
     omp.parallel   {
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         memref.alloca_scope  {
-          %5 = memref.load %alloc[%arg6] : memref<128xf32>
+          %5 = memref.load %alloc[%arg6] : memref<16xf32>
           %6 = memref.load %arg0[%arg6] : memref<?xindex>
           %7 = arith.addi %arg6, %c1 : index
           %8 = memref.load %arg0[%7] : memref<?xindex>
@@ -552,7 +552,7 @@ module {
             omp.terminator
           }
           %11 = llvm.load %10 : !llvm.ptr -> f32
-          memref.store %11, %alloc[%arg6] : memref<128xf32>
+          memref.store %11, %alloc[%arg6] : memref<16xf32>
         }
         omp.yield
       }
@@ -567,24 +567,24 @@ module {
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
   %0 = llvm.mlir.constant(1 : i64) : i64
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %1 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %2 = llvm.insertvalue %c0_i64, %1[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %3 = llvm.insertvalue %c128_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  scf.for %arg6 = %c0 to %c128 step %c1 {
-    memref.store %cst, %alloc[%arg6] : memref<128xf32>
+  %3 = llvm.insertvalue %c16_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  scf.for %arg6 = %c0 to %c16 step %c1 {
+    memref.store %cst, %alloc[%arg6] : memref<16xf32>
   }
-  %4 = llvm.insertvalue %c128_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %4 = llvm.insertvalue %c16_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   omp.parallel   {
     %5 = llvm.alloca %0 x f32 : (i64) -> !llvm.ptr
-    omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
-      %6 = memref.load %alloc[%arg6] : memref<128xf32>
+    omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
+      %6 = memref.load %alloc[%arg6] : memref<16xf32>
       %7 = memref.load %arg0[%arg6] : memref<?xindex>
       %8 = arith.addi %arg6, %c1 : index
       %9 = memref.load %arg0[%8] : memref<?xindex>
@@ -603,7 +603,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
         omp.terminator
       }
       %10 = llvm.load %5 : !llvm.ptr -> f32
-      memref.store %10, %alloc[%arg6] : memref<128xf32>
+      memref.store %10, %alloc[%arg6] : memref<16xf32>
       omp.yield
     }
     omp.terminator
@@ -615,30 +615,30 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
 func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
   %0 = llvm.mlir.constant(1 : i64) : i64
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %alloc = memref.alloc() : memref<128xf32>
-  %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+  %alloc = memref.alloc() : memref<16xf32>
+  %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
   %1 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %2 = llvm.insertvalue %c0_i64, %1[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %3 = llvm.insertvalue %c128_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %3 = llvm.insertvalue %c16_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   cf.br ^bb1(%c0 : index)
 ^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
-  %5 = arith.cmpi slt, %4, %c128 : index
+  %5 = arith.cmpi slt, %4, %c16 : index
   cf.cond_br %5, ^bb2, ^bb3
 ^bb2:  // pred: ^bb1
-  memref.store %cst, %alloc[%4] : memref<128xf32>
+  memref.store %cst, %alloc[%4] : memref<16xf32>
   %6 = arith.addi %4, %c1 : index
   cf.br ^bb1(%6 : index)
 ^bb3:  // pred: ^bb1
-  %7 = llvm.insertvalue %c128_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %7 = llvm.insertvalue %c16_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   omp.parallel   {
     %8 = llvm.alloca %0 x f32 : (i64) -> !llvm.ptr
-    omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
-      %9 = memref.load %alloc[%arg6] : memref<128xf32>
+    omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
+      %9 = memref.load %alloc[%arg6] : memref<16xf32>
       %10 = memref.load %arg0[%arg6] : memref<?xindex>
       %11 = arith.addi %arg6, %c1 : index
       %12 = memref.load %arg0[%11] : memref<?xindex>
@@ -657,7 +657,7 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
         omp.terminator
       }
       %13 = llvm.load %8 : !llvm.ptr -> f32
-      memref.store %13, %alloc[%arg6] : memref<128xf32>
+      memref.store %13, %alloc[%arg6] : memref<16xf32>
       omp.yield
     }
     omp.terminator
@@ -684,30 +684,30 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %alloc = memref.alloc() : memref<128xf32>
-    %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+    %alloc = memref.alloc() : memref<16xf32>
+    %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
     %1 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %2 = llvm.insertvalue %c0_i64, %1[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %3 = llvm.insertvalue %c128_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %c16_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
-    %5 = arith.cmpi slt, %4, %c128 : index
+    %5 = arith.cmpi slt, %4, %c16 : index
     cf.cond_br %5, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
-    memref.store %cst, %alloc[%4] : memref<128xf32>
+    memref.store %cst, %alloc[%4] : memref<16xf32>
     %6 = arith.addi %4, %c1 : index
     cf.br ^bb1(%6 : index)
   ^bb3:  // pred: ^bb1
-    %7 = llvm.insertvalue %c128_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %7 = llvm.insertvalue %c16_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %8 = llvm.alloca %0 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
-        %9 = memref.load %alloc[%arg6] : memref<128xf32>
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
+        %9 = memref.load %alloc[%arg6] : memref<16xf32>
         %10 = memref.load %arg0[%arg6] : memref<?xindex>
         %11 = arith.addi %arg6, %c1 : index
         %12 = memref.load %arg0[%11] : memref<?xindex>
@@ -726,7 +726,7 @@ module {
           omp.terminator
         }
         %13 = llvm.load %8 : !llvm.ptr -> f32
-        memref.store %13, %alloc[%arg6] : memref<128xf32>
+        memref.store %13, %alloc[%arg6] : memref<16xf32>
         omp.yield
       }
       omp.terminator
@@ -755,30 +755,30 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %alloc = memref.alloc() : memref<128xf32>
-    %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+    %alloc = memref.alloc() : memref<16xf32>
+    %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
     %1 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %2 = llvm.insertvalue %c0_i64, %1[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %3 = llvm.insertvalue %c128_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %c16_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
-    %5 = arith.cmpi slt, %4, %c128 : index
+    %5 = arith.cmpi slt, %4, %c16 : index
     cf.cond_br %5, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
-    memref.store %cst, %alloc[%4] : memref<128xf32>
+    memref.store %cst, %alloc[%4] : memref<16xf32>
     %6 = arith.addi %4, %c1 : index
     cf.br ^bb1(%6 : index)
   ^bb3:  // pred: ^bb1
-    %7 = llvm.insertvalue %c128_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %7 = llvm.insertvalue %c16_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %8 = llvm.alloca %0 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
-        %9 = memref.load %alloc[%arg6] : memref<128xf32>
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
+        %9 = memref.load %alloc[%arg6] : memref<16xf32>
         %10 = memref.load %arg0[%arg6] : memref<?xindex>
         %11 = arith.addi %arg6, %c1 : index
         %12 = memref.load %arg0[%11] : memref<?xindex>
@@ -797,7 +797,7 @@ module {
           omp.terminator
         }
         %13 = llvm.load %8 : !llvm.ptr -> f32
-        memref.store %13, %alloc[%arg6] : memref<128xf32>
+        memref.store %13, %alloc[%arg6] : memref<16xf32>
         omp.yield
       }
       omp.terminator
@@ -826,30 +826,30 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %alloc = memref.alloc() : memref<128xf32>
-    %cast = memref.cast %alloc : memref<128xf32> to memref<?xf32>
+    %alloc = memref.alloc() : memref<16xf32>
+    %cast = memref.cast %alloc : memref<16xf32> to memref<?xf32>
     %1 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %2 = llvm.insertvalue %c0_i64, %1[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %3 = llvm.insertvalue %c128_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %3 = llvm.insertvalue %c16_i64, %2[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
-    %5 = arith.cmpi slt, %4, %c128 : index
+    %5 = arith.cmpi slt, %4, %c16 : index
     cf.cond_br %5, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
-    memref.store %cst, %alloc[%4] : memref<128xf32>
+    memref.store %cst, %alloc[%4] : memref<16xf32>
     %6 = arith.addi %4, %c1 : index
     cf.br ^bb1(%6 : index)
   ^bb3:  // pred: ^bb1
-    %7 = llvm.insertvalue %c128_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %7 = llvm.insertvalue %c16_i64, %3[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %8 = llvm.alloca %0 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
-        %9 = memref.load %alloc[%arg6] : memref<128xf32>
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
+        %9 = memref.load %alloc[%arg6] : memref<16xf32>
         %10 = memref.load %arg0[%arg6] : memref<?xindex>
         %11 = arith.addi %arg6, %c1 : index
         %12 = memref.load %arg0[%11] : memref<?xindex>
@@ -868,7 +868,7 @@ module {
           omp.terminator
         }
         %13 = llvm.load %8 : !llvm.ptr -> f32
-        memref.store %13, %alloc[%arg6] : memref<128xf32>
+        memref.store %13, %alloc[%arg6] : memref<16xf32>
         omp.yield
       }
       omp.terminator
@@ -902,12 +902,12 @@ module {
     %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %4 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %5 = llvm.mlir.constant(128 : index) : i64
+    %5 = llvm.mlir.constant(16 : index) : i64
     %6 = llvm.mlir.constant(1 : index) : i64
     %7 = llvm.mlir.null : !llvm.ptr
     %8 = llvm.getelementptr %7[%5] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -923,11 +923,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.extractvalue %17[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
@@ -936,10 +936,10 @@ module {
     %27 = arith.addi %22, %c1 : index
     cf.br ^bb1(%27 : index)
   ^bb3:  // pred: ^bb1
-    %28 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %28 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %29 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %30 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %31 = llvm.extractvalue %17[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
         %32 = llvm.getelementptr %31[%30] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1000,15 +1000,15 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
   %4 = llvm.mlir.constant(1 : i64) : i64
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %5 = llvm.mlir.constant(128 : index) : i64
+  %5 = llvm.mlir.constant(16 : index) : i64
   %6 = llvm.mlir.constant(1 : index) : i64
   %7 = llvm.mlir.null : !llvm.ptr
-  %8 = llvm.getelementptr %7[128] : (!llvm.ptr) -> !llvm.ptr, f32
+  %8 = llvm.getelementptr %7[16] : (!llvm.ptr) -> !llvm.ptr, f32
   %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
   %10 = llvm.call @malloc(%9) : (i64) -> !llvm.ptr
   %11 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1021,11 +1021,11 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
   %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   cf.br ^bb1(%c0 : index)
 ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
   %23 = builtin.unrealized_conversion_cast %22 : index to i64
-  %24 = arith.cmpi slt, %22, %c128 : index
+  %24 = arith.cmpi slt, %22, %c16 : index
   cf.cond_br %24, ^bb2, ^bb3
 ^bb2:  // pred: ^bb1
   %25 = llvm.getelementptr %10[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1033,10 +1033,10 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %26 = arith.addi %22, %c1 : index
   cf.br ^bb1(%26 : index)
 ^bb3:  // pred: ^bb1
-  %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   omp.parallel   {
     %28 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-    omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+    omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
       %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
       %30 = llvm.getelementptr %10[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
       %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1093,15 +1093,15 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
   %4 = llvm.mlir.constant(1 : i64) : i64
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %5 = llvm.mlir.constant(128 : index) : i64
+  %5 = llvm.mlir.constant(16 : index) : i64
   %6 = llvm.mlir.constant(1 : index) : i64
   %7 = llvm.mlir.null : !llvm.ptr
-  %8 = llvm.getelementptr %7[128] : (!llvm.ptr) -> !llvm.ptr, f32
+  %8 = llvm.getelementptr %7[16] : (!llvm.ptr) -> !llvm.ptr, f32
   %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
   %10 = llvm.call @malloc(%9) : (i64) -> !llvm.ptr
   %11 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1114,11 +1114,11 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
   %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   cf.br ^bb1(%c0 : index)
 ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
   %23 = builtin.unrealized_conversion_cast %22 : index to i64
-  %24 = arith.cmpi slt, %22, %c128 : index
+  %24 = arith.cmpi slt, %22, %c16 : index
   cf.cond_br %24, ^bb2, ^bb3
 ^bb2:  // pred: ^bb1
   %25 = llvm.getelementptr %10[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1126,10 +1126,10 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %26 = arith.addi %22, %c1 : index
   cf.br ^bb1(%26 : index)
 ^bb3:  // pred: ^bb1
-  %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   omp.parallel   {
     %28 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-    omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+    omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
       %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
       %30 = llvm.getelementptr %10[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
       %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1186,15 +1186,15 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
   %4 = llvm.mlir.constant(1 : i64) : i64
   %c0 = arith.constant 0 : index
-  %c128 = arith.constant 128 : index
+  %c16 = arith.constant 16 : index
   %c1 = arith.constant 1 : index
-  %c128_i64 = arith.constant 128 : i64
+  %c16_i64 = arith.constant 16 : i64
   %c0_i64 = arith.constant 0 : i64
   %cst = arith.constant 0.000000e+00 : f32
-  %5 = llvm.mlir.constant(128 : index) : i64
+  %5 = llvm.mlir.constant(16 : index) : i64
   %6 = llvm.mlir.constant(1 : index) : i64
   %7 = llvm.mlir.null : !llvm.ptr
-  %8 = llvm.getelementptr %7[128] : (!llvm.ptr) -> !llvm.ptr, f32
+  %8 = llvm.getelementptr %7[16] : (!llvm.ptr) -> !llvm.ptr, f32
   %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
   %10 = llvm.call @malloc(%9) : (i64) -> !llvm.ptr
   %11 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1207,11 +1207,11 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
   %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
   %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-  %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   cf.br ^bb1(%c0 : index)
 ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
   %23 = builtin.unrealized_conversion_cast %22 : index to i64
-  %24 = arith.cmpi slt, %22, %c128 : index
+  %24 = arith.cmpi slt, %22, %c16 : index
   cf.cond_br %24, ^bb2, ^bb3
 ^bb2:  // pred: ^bb1
   %25 = llvm.getelementptr %10[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1219,10 +1219,10 @@ func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg
   %26 = arith.addi %22, %c1 : index
   cf.br ^bb1(%26 : index)
 ^bb3:  // pred: ^bb1
-  %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+  %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
   omp.parallel   {
     %28 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-    omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+    omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
       %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
       %30 = llvm.getelementptr %10[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
       %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1295,15 +1295,15 @@ module {
     %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %4 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %5 = llvm.mlir.constant(128 : index) : i64
+    %5 = llvm.mlir.constant(16 : index) : i64
     %6 = llvm.mlir.constant(1 : index) : i64
     %7 = llvm.mlir.null : !llvm.ptr
-    %8 = llvm.getelementptr %7[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %8 = llvm.getelementptr %7[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
     %10 = llvm.call @malloc(%9) : (i64) -> !llvm.ptr
     %11 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1316,11 +1316,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.getelementptr %10[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1328,10 +1328,10 @@ module {
     %26 = arith.addi %22, %c1 : index
     cf.br ^bb1(%26 : index)
   ^bb3:  // pred: ^bb1
-    %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %28 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %30 = llvm.getelementptr %10[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1406,15 +1406,15 @@ module {
     %3 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %4 = llvm.mlir.constant(1 : i64) : i64
     %c0 = arith.constant 0 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c1 = arith.constant 1 : index
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c0_i64 = arith.constant 0 : i64
     %cst = arith.constant 0.000000e+00 : f32
-    %5 = llvm.mlir.constant(128 : index) : i64
+    %5 = llvm.mlir.constant(16 : index) : i64
     %6 = llvm.mlir.constant(1 : index) : i64
     %7 = llvm.mlir.null : !llvm.ptr
-    %8 = llvm.getelementptr %7[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %8 = llvm.getelementptr %7[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %9 = llvm.ptrtoint %8 : !llvm.ptr to i64
     %10 = llvm.call @malloc(%9) : (i64) -> !llvm.ptr
     %11 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1427,11 +1427,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.getelementptr %10[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1439,10 +1439,10 @@ module {
     %26 = arith.addi %22, %c1 : index
     cf.br ^bb1(%26 : index)
   ^bb3:  // pred: ^bb1
-    %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %28 = llvm.alloca %4 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %30 = llvm.getelementptr %10[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1513,12 +1513,12 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(0 : index) : i64
     %1 = llvm.mlir.constant(1 : index) : i64
-    %2 = llvm.mlir.constant(128 : index) : i64
+    %2 = llvm.mlir.constant(16 : index) : i64
     %cst = arith.constant 0.000000e+00 : f32
     %c0_i64 = arith.constant 0 : i64
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c1 = arith.constant 1 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %3 = llvm.mlir.constant(1 : i64) : i64
     %4 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1526,7 +1526,7 @@ module {
     %6 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %7 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %8 = llvm.mlir.null : !llvm.ptr
-    %9 = llvm.getelementptr %8[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %9 = llvm.getelementptr %8[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
     %11 = llvm.call @malloc(%10) : (i64) -> !llvm.ptr
     %12 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1538,11 +1538,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.getelementptr %11[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1550,10 +1550,10 @@ module {
     %26 = arith.addi %22, %c1 : index
     cf.br ^bb1(%26 : index)
   ^bb3:  // pred: ^bb1
-    %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %28 = llvm.alloca %3 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %30 = llvm.getelementptr %11[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1624,12 +1624,12 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(0 : index) : i64
     %1 = llvm.mlir.constant(1 : index) : i64
-    %2 = llvm.mlir.constant(128 : index) : i64
+    %2 = llvm.mlir.constant(16 : index) : i64
     %cst = arith.constant 0.000000e+00 : f32
     %c0_i64 = arith.constant 0 : i64
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c1 = arith.constant 1 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %3 = llvm.mlir.constant(1 : i64) : i64
     %4 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1637,7 +1637,7 @@ module {
     %6 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %7 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %8 = llvm.mlir.null : !llvm.ptr
-    %9 = llvm.getelementptr %8[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %9 = llvm.getelementptr %8[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
     %11 = llvm.call @malloc(%10) : (i64) -> !llvm.ptr
     %12 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1649,11 +1649,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.getelementptr %11[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1661,10 +1661,10 @@ module {
     %26 = arith.addi %22, %c1 : index
     cf.br ^bb1(%26 : index)
   ^bb3:  // pred: ^bb1
-    %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %28 = llvm.alloca %3 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %30 = llvm.getelementptr %11[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1735,12 +1735,12 @@ module {
   func.func @SpMVMul.z.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xf32>, %arg3: !llvm.struct<(array<2 x i64>, array<3 x i64>)>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<1 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<1 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
     %0 = llvm.mlir.constant(0 : index) : i64
     %1 = llvm.mlir.constant(1 : index) : i64
-    %2 = llvm.mlir.constant(128 : index) : i64
+    %2 = llvm.mlir.constant(16 : index) : i64
     %cst = arith.constant 0.000000e+00 : f32
     %c0_i64 = arith.constant 0 : i64
-    %c128_i64 = arith.constant 128 : i64
+    %c16_i64 = arith.constant 16 : i64
     %c1 = arith.constant 1 : index
-    %c128 = arith.constant 128 : index
+    %c16 = arith.constant 16 : index
     %c0 = arith.constant 0 : index
     %3 = llvm.mlir.constant(1 : i64) : i64
     %4 = builtin.unrealized_conversion_cast %arg0 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1748,7 +1748,7 @@ module {
     %6 = builtin.unrealized_conversion_cast %arg2 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %7 = builtin.unrealized_conversion_cast %arg4 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %8 = llvm.mlir.null : !llvm.ptr
-    %9 = llvm.getelementptr %8[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %9 = llvm.getelementptr %8[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %10 = llvm.ptrtoint %9 : !llvm.ptr to i64
     %11 = llvm.call @malloc(%10) : (i64) -> !llvm.ptr
     %12 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1760,11 +1760,11 @@ module {
     %18 = builtin.unrealized_conversion_cast %17 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %19 = llvm.mlir.undef : !llvm.struct<(array<1 x i64>, array<1 x i64>)>
     %20 = llvm.insertvalue %c0_i64, %19[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
-    %21 = llvm.insertvalue %c128_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %21 = llvm.insertvalue %c16_i64, %20[0, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     cf.br ^bb1(%c0 : index)
   ^bb1(%22: index):  // 2 preds: ^bb0, ^bb2
     %23 = builtin.unrealized_conversion_cast %22 : index to i64
-    %24 = arith.cmpi slt, %22, %c128 : index
+    %24 = arith.cmpi slt, %22, %c16 : index
     cf.cond_br %24, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     %25 = llvm.getelementptr %11[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
@@ -1772,10 +1772,10 @@ module {
     %26 = arith.addi %22, %c1 : index
     cf.br ^bb1(%26 : index)
   ^bb3:  // pred: ^bb1
-    %27 = llvm.insertvalue %c128_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
+    %27 = llvm.insertvalue %c16_i64, %21[1, 0] : !llvm.struct<(array<1 x i64>, array<1 x i64>)> 
     omp.parallel   {
       %28 = llvm.alloca %3 x f32 : (i64) -> !llvm.ptr
-      omp.wsloop   for  (%arg6) : index = (%c0) to (%c128) step (%c1) {
+      omp.wsloop   for  (%arg6) : index = (%c0) to (%c16) step (%c1) {
         %29 = builtin.unrealized_conversion_cast %arg6 : index to i64
         %30 = llvm.getelementptr %11[%29] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         %31 = llvm.load %30 : !llvm.ptr -> f32
@@ -1874,12 +1874,12 @@ module {
     %27 = builtin.unrealized_conversion_cast %26 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %28 = llvm.mlir.constant(0 : index) : i64
     %29 = llvm.mlir.constant(1 : index) : i64
-    %30 = llvm.mlir.constant(128 : index) : i64
+    %30 = llvm.mlir.constant(16 : index) : i64
     %31 = llvm.mlir.constant(0.000000e+00 : f32) : f32
     %32 = llvm.mlir.constant(0 : i64) : i64
-    %33 = llvm.mlir.constant(128 : i64) : i64
+    %33 = llvm.mlir.constant(16 : i64) : i64
     %34 = llvm.mlir.constant(1 : index) : i64
-    %35 = llvm.mlir.constant(128 : index) : i64
+    %35 = llvm.mlir.constant(16 : index) : i64
     %36 = llvm.mlir.constant(0 : index) : i64
     %37 = llvm.mlir.constant(1 : i64) : i64
     %38 = builtin.unrealized_conversion_cast %6 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -1887,7 +1887,7 @@ module {
     %40 = builtin.unrealized_conversion_cast %20 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %41 = builtin.unrealized_conversion_cast %27 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %42 = llvm.mlir.null : !llvm.ptr
-    %43 = llvm.getelementptr %42[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %43 = llvm.getelementptr %42[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %44 = llvm.ptrtoint %43 : !llvm.ptr to i64
     %45 = llvm.call @malloc(%44) : (i64) -> !llvm.ptr
     %46 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -2049,12 +2049,12 @@ module attributes {llvm.data_layout = ""} {
     %27 = builtin.unrealized_conversion_cast %26 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> to memref<?xf32>
     %28 = llvm.mlir.constant(0 : index) : i64
     %29 = llvm.mlir.constant(1 : index) : i64
-    %30 = llvm.mlir.constant(128 : index) : i64
+    %30 = llvm.mlir.constant(16 : index) : i64
     %31 = llvm.mlir.constant(0.000000e+00 : f32) : f32
     %32 = llvm.mlir.constant(0 : i64) : i64
-    %33 = llvm.mlir.constant(128 : i64) : i64
+    %33 = llvm.mlir.constant(16 : i64) : i64
     %34 = llvm.mlir.constant(1 : index) : i64
-    %35 = llvm.mlir.constant(128 : index) : i64
+    %35 = llvm.mlir.constant(16 : index) : i64
     %36 = llvm.mlir.constant(0 : index) : i64
     %37 = llvm.mlir.constant(1 : i64) : i64
     %38 = builtin.unrealized_conversion_cast %6 : memref<?xindex> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -2062,7 +2062,7 @@ module attributes {llvm.data_layout = ""} {
     %40 = builtin.unrealized_conversion_cast %20 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %41 = builtin.unrealized_conversion_cast %27 : memref<?xf32> to !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
     %42 = llvm.mlir.null : !llvm.ptr
-    %43 = llvm.getelementptr %42[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %43 = llvm.getelementptr %42[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %44 = llvm.ptrtoint %43 : !llvm.ptr to i64
     %45 = llvm.call @malloc(%44) : (i64) -> !llvm.ptr
     %46 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
@@ -2220,16 +2220,16 @@ module attributes {llvm.data_layout = ""} {
     %23 = llvm.insertvalue %arg20, %22[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
     %24 = llvm.mlir.constant(0 : index) : i64
     %25 = llvm.mlir.constant(1 : index) : i64
-    %26 = llvm.mlir.constant(128 : index) : i64
+    %26 = llvm.mlir.constant(16 : index) : i64
     %27 = llvm.mlir.constant(0.000000e+00 : f32) : f32
     %28 = llvm.mlir.constant(0 : i64) : i64
-    %29 = llvm.mlir.constant(128 : i64) : i64
+    %29 = llvm.mlir.constant(16 : i64) : i64
     %30 = llvm.mlir.constant(1 : index) : i64
-    %31 = llvm.mlir.constant(128 : index) : i64
+    %31 = llvm.mlir.constant(16 : index) : i64
     %32 = llvm.mlir.constant(0 : index) : i64
     %33 = llvm.mlir.constant(1 : i64) : i64
     %34 = llvm.mlir.null : !llvm.ptr
-    %35 = llvm.getelementptr %34[128] : (!llvm.ptr) -> !llvm.ptr, f32
+    %35 = llvm.getelementptr %34[16] : (!llvm.ptr) -> !llvm.ptr, f32
     %36 = llvm.ptrtoint %35 : !llvm.ptr to i64
     %37 = llvm.call @malloc(%36) : (i64) -> !llvm.ptr
     %38 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>

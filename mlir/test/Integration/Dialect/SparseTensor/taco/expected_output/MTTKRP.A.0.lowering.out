@@ -5980,6 +5980,303 @@ module {
 
 
 // -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func private @_sparse_binary_search_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) -> index {
+  %c1 = arith.constant 1 : index
+  %0:2 = scf.while (%arg3 = %arg0, %arg4 = %arg1) : (index, index) -> (index, index) {
+    %1 = arith.cmpi ult, %arg3, %arg4 : index
+    scf.condition(%1) %arg3, %arg4 : index, index
+  } do {
+  ^bb0(%arg3: index, %arg4: index):
+    %1 = arith.addi %arg3, %arg4 : index
+    %2 = arith.shrui %1, %c1 : index
+    %3 = arith.addi %2, %c1 : index
+    %4 = memref.load %arg2[%arg1] : memref<?xindex>
+    %5 = memref.load %arg2[%2] : memref<?xindex>
+    %6 = arith.cmpi ult, %4, %5 : index
+    %7 = arith.select %6, %arg3, %3 : index
+    %8 = arith.select %6, %2, %arg4 : index
+    scf.yield %7, %8 : index, index
+  }
+  return %0#0 : index
+}
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func private @_insert_compressed_compressed_dense_128_128_32_f32_0_0(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xindex>, %arg3: memref<?xindex>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<3 x i64>, array<5 x i64>)>, %arg6: index, %arg7: index, %arg8: index, %arg9: f32) -> (memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %c32 = arith.constant 32 : index
+  %false = arith.constant false
+  %c0 = arith.constant 0 : index
+  %0 = memref.load %arg0[%c0] : memref<?xindex>
+  %1 = memref.load %arg0[%c1] : memref<?xindex>
+  %2 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %3 = arith.index_cast %2 : i64 to index
+  %4 = arith.subi %1, %c1 : index
+  %5 = arith.cmpi ult, %0, %1 : index
+  %6 = scf.if %5 -> (i1) {
+    %21 = memref.load %arg1[%4] : memref<?xindex>
+    %22 = arith.cmpi eq, %21, %arg6 : index
+    scf.yield %22 : i1
+  } else {
+    scf.yield %false : i1
+  }
+  %7 = arith.select %6, %4, %3 : index
+  %8:3 = scf.if %6 -> (memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
+    scf.yield %arg1, %arg2, %arg5 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+  } else {
+    %21 = arith.addi %3, %c1 : index
+    memref.store %21, %arg0[%c1] : memref<?xindex>
+    %22 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %23 = arith.index_cast %22 : i64 to index
+    %dim = memref.dim %arg1, %c0 : memref<?xindex>
+    %24 = arith.addi %23, %c1 : index
+    %25 = arith.cmpi ugt, %24, %dim : index
+    %26 = scf.if %25 -> (memref<?xindex>) {
+      %36 = arith.muli %dim, %c2 : index
+      %37 = memref.realloc %arg1(%36) : memref<?xindex> to memref<?xindex>
+      scf.yield %37 : memref<?xindex>
+    } else {
+      scf.yield %arg1 : memref<?xindex>
+    }
+    memref.store %arg6, %26[%23] : memref<?xindex>
+    %27 = arith.index_cast %24 : index to i64
+    %28 = llvm.insertvalue %27, %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %29 = llvm.extractvalue %arg5[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %30 = arith.index_cast %29 : i64 to index
+    %dim_0 = memref.dim %arg2, %c0 : memref<?xindex>
+    %31 = arith.addi %30, %c1 : index
+    %32 = arith.cmpi ugt, %31, %dim_0 : index
+    %33 = scf.if %32 -> (memref<?xindex>) {
+      %36 = arith.muli %dim_0, %c2 : index
+      %37 = memref.realloc %arg2(%36) : memref<?xindex> to memref<?xindex>
+      scf.yield %37 : memref<?xindex>
+    } else {
+      scf.yield %arg2 : memref<?xindex>
+    }
+    memref.store %c0, %33[%30] : memref<?xindex>
+    %34 = arith.index_cast %31 : index to i64
+    %35 = llvm.insertvalue %34, %28[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    scf.yield %26, %33, %35 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+  }
+  %9 = arith.addi %7, %c1 : index
+  %10 = memref.load %8#1[%7] : memref<?xindex>
+  %11 = memref.load %8#1[%9] : memref<?xindex>
+  %12 = llvm.extractvalue %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %13 = arith.index_cast %12 : i64 to index
+  %14 = arith.subi %11, %c1 : index
+  %15 = arith.cmpi ult, %10, %11 : index
+  %16 = scf.if %15 -> (i1) {
+    %21 = memref.load %arg3[%14] : memref<?xindex>
+    %22 = arith.cmpi eq, %21, %arg7 : index
+    scf.yield %22 : i1
+  } else {
+    memref.store %13, %8#1[%7] : memref<?xindex>
+    scf.yield %false : i1
+  }
+  %17 = arith.select %16, %14, %13 : index
+  %18:3 = scf.if %16 -> (memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
+    scf.yield %arg3, %arg4, %8#2 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+  } else {
+    %21 = arith.addi %13, %c1 : index
+    memref.store %21, %8#1[%9] : memref<?xindex>
+    %22 = llvm.extractvalue %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %23 = arith.index_cast %22 : i64 to index
+    %dim = memref.dim %arg3, %c0 : memref<?xindex>
+    %24 = arith.addi %23, %c1 : index
+    %25 = arith.cmpi ugt, %24, %dim : index
+    %26 = scf.if %25 -> (memref<?xindex>) {
+      %36 = arith.muli %dim, %c2 : index
+      %37 = memref.realloc %arg3(%36) : memref<?xindex> to memref<?xindex>
+      scf.yield %37 : memref<?xindex>
+    } else {
+      scf.yield %arg3 : memref<?xindex>
+    }
+    memref.store %arg7, %26[%23] : memref<?xindex>
+    %27 = arith.index_cast %24 : index to i64
+    %28 = llvm.insertvalue %27, %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %29 = llvm.extractvalue %8#2[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    %30 = arith.index_cast %29 : i64 to index
+    %dim_0 = memref.dim %arg4, %c0 : memref<?xf32>
+    %31 = arith.addi %30, %c32 : index
+    %32 = arith.cmpi ugt, %31, %dim_0 : index
+    %33 = scf.if %32 -> (memref<?xf32>) {
+      %36 = scf.while (%arg10 = %dim_0) : (index) -> index {
+        %38 = arith.muli %arg10, %c2 : index
+        %39 = arith.cmpi ugt, %31, %38 : index
+        scf.condition(%39) %38 : index
+      } do {
+      ^bb0(%arg10: index):
+        scf.yield %arg10 : index
+      }
+      %37 = memref.realloc %arg4(%36) : memref<?xf32> to memref<?xf32>
+      scf.yield %37 : memref<?xf32>
+    } else {
+      scf.yield %arg4 : memref<?xf32>
+    }
+    %subview = memref.subview %33[%30] [32] [1] : memref<?xf32> to memref<32xf32, strided<[1], offset: ?>>
+    scf.for %arg10 = %c0 to %c32 step %c1 {
+      memref.store %cst, %subview[%arg10] : memref<32xf32, strided<[1], offset: ?>>
+    }
+    %34 = arith.index_cast %31 : index to i64
+    %35 = llvm.insertvalue %34, %28[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+    scf.yield %26, %33, %35 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+  }
+  %19 = arith.muli %17, %c32 : index
+  %20 = arith.addi %19, %arg8 : index
+  memref.store %arg9, %18#1[%20] : memref<?xf32>
+  return %arg0, %8#0, %8#1, %18#0, %18#1, %18#2 : memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+}
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func private @_sparse_heap_sort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %0 = arith.subi %arg1, %arg0 : index
+  %1 = arith.subi %0, %c2 : index
+  %2 = arith.shrui %1, %c1 : index
+  %3 = arith.addi %2, %c1 : index
+  scf.for %arg3 = %c0 to %3 step %c1 {
+    %5 = arith.subi %2, %arg3 : index
+    %6 = arith.addi %arg0, %5 : index
+    func.call @_sparse_shift_down_1_index(%arg0, %6, %arg2, %0) : (index, index, memref<?xindex>, index) -> ()
+  }
+  %4 = arith.subi %0, %c1 : index
+  scf.for %arg3 = %c0 to %4 step %c1 {
+    %5 = arith.subi %0, %arg3 : index
+    %6 = arith.addi %arg0, %5 : index
+    %7 = arith.subi %6, %c1 : index
+    %8 = memref.load %arg2[%arg0] : memref<?xindex>
+    %9 = memref.load %arg2[%7] : memref<?xindex>
+    memref.store %9, %arg2[%arg0] : memref<?xindex>
+    memref.store %8, %arg2[%7] : memref<?xindex>
+    %10 = arith.subi %5, %c1 : index
+    func.call @_sparse_shift_down_1_index(%arg0, %arg0, %arg2, %10) : (index, index, memref<?xindex>, index) -> ()
+  }
+  return
+}
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func private @_sparse_hybrid_qsort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: i64) {
+  %c30 = arith.constant 30 : index
+  %c1_i64 = arith.constant 1 : i64
+  %c0_i64 = arith.constant 0 : i64
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  %0:2 = scf.while (%arg4 = %arg0, %arg5 = %arg1) : (index, index) -> (index, index) {
+    %1 = arith.addi %arg4, %c1 : index
+    %2 = arith.cmpi ult, %1, %arg5 : index
+    scf.condition(%2) %arg4, %arg5 : index, index
+  } do {
+  ^bb0(%arg4: index, %arg5: index):
+    %1 = arith.subi %arg5, %arg4 : index
+    %2 = arith.cmpi ule, %1, %c30 : index
+    %3:2 = scf.if %2 -> (index, index) {
+      func.call @_sparse_sort_stable_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> ()
+      scf.yield %arg4, %arg4 : index, index
+    } else {
+      %4 = arith.subi %arg3, %c1_i64 : i64
+      %5 = arith.cmpi ule, %4, %c0_i64 : i64
+      %6:2 = scf.if %5 -> (index, index) {
+        func.call @_sparse_heap_sort_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> ()
+        scf.yield %arg4, %arg4 : index, index
+      } else {
+        %7 = func.call @_sparse_partition_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> index
+        %8 = arith.addi %7, %c1 : index
+        %9 = arith.subi %7, %arg4 : index
+        %10 = arith.subi %arg5, %7 : index
+        %11 = arith.cmpi ule, %9, %10 : index
+        %12 = arith.select %11, %8, %arg4 : index
+        %13 = arith.select %11, %arg5, %7 : index
+        scf.if %11 {
+          %14 = arith.cmpi ne, %9, %c0 : index
+          scf.if %14 {
+            func.call @_sparse_hybrid_qsort_1_index(%arg4, %7, %arg2, %4) : (index, index, memref<?xindex>, i64) -> ()
+          }
+        } else {
+          %14 = arith.cmpi ne, %10, %c0 : index
+          scf.if %14 {
+            func.call @_sparse_hybrid_qsort_1_index(%8, %arg5, %arg2, %4) : (index, index, memref<?xindex>, i64) -> ()
+          }
+        }
+        scf.yield %12, %13 : index, index
+      }
+      scf.yield %6#0, %6#1 : index, index
+    }
+    scf.yield %3#0, %3#1 : index, index
+  }
+  return
+}
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
+func.func private @_sparse_shift_down_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: index) {
+  %c2 = arith.constant 2 : index
+  %c1 = arith.constant 1 : index
+  %0 = arith.cmpi uge, %arg3, %c2 : index
+  scf.if %0 {
+    %1 = arith.subi %arg1, %arg0 : index
+    %2 = arith.subi %arg3, %c2 : index
+    %3 = arith.shrui %2, %c1 : index
+    %4 = arith.cmpi uge, %3, %1 : index
+    scf.if %4 {
+      %5 = arith.shli %1, %c1 : index
+      %6 = arith.addi %5, %c1 : index
+      %7 = arith.addi %6, %arg0 : index
+      %8 = arith.addi %5, %c2 : index
+      %9 = arith.cmpi ult, %8, %arg3 : index
+      %10:2 = scf.if %9 -> (index, index) {
+        %12 = arith.addi %8, %arg0 : index
+        %13 = memref.load %arg2[%7] : memref<?xindex>
+        %14 = memref.load %arg2[%12] : memref<?xindex>
+        %15 = arith.cmpi ult, %13, %14 : index
+        %16 = arith.select %15, %8, %6 : index
+        %17 = arith.select %15, %12, %7 : index
+        scf.yield %16, %17 : index, index
+      } else {
+        scf.yield %6, %7 : index, index
+      }
+      %11:3 = scf.while (%arg4 = %arg1, %arg5 = %10#0, %arg6 = %10#1) : (index, index, index) -> (index, index, index) {
+        %12 = memref.load %arg2[%arg4] : memref<?xindex>
+        %13 = memref.load %arg2[%arg6] : memref<?xindex>
+        %14 = arith.cmpi ult, %12, %13 : index
+        scf.condition(%14) %arg4, %arg5, %arg6 : index, index, index
+      } do {
+      ^bb0(%arg4: index, %arg5: index, %arg6: index):
+        %12 = memref.load %arg2[%arg4] : memref<?xindex>
+        %13 = memref.load %arg2[%arg6] : memref<?xindex>
+        memref.store %13, %arg2[%arg4] : memref<?xindex>
+        memref.store %12, %arg2[%arg6] : memref<?xindex>
+        %14 = arith.cmpi uge, %3, %arg5 : index
+        %15:2 = scf.if %14 -> (index, index) {
+          %16 = arith.shli %arg5, %c1 : index
+          %17 = arith.addi %16, %c1 : index
+          %18 = arith.addi %17, %arg0 : index
+          %19 = arith.addi %16, %c2 : index
+          %20 = arith.cmpi ult, %19, %arg3 : index
+          %21:2 = scf.if %20 -> (index, index) {
+            %22 = arith.addi %19, %arg0 : index
+            %23 = memref.load %arg2[%18] : memref<?xindex>
+            %24 = memref.load %arg2[%22] : memref<?xindex>
+            %25 = arith.cmpi ult, %23, %24 : index
+            %26 = arith.select %25, %19, %17 : index
+            %27 = arith.select %25, %22, %18 : index
+            scf.yield %26, %27 : index, index
+          } else {
+            scf.yield %17, %18 : index, index
+          }
+          scf.yield %21#0, %21#1 : index, index
+        } else {
+          scf.yield %arg5, %arg6 : index, index
+        }
+        scf.yield %arg6, %15#0, %15#1 : index, index, index
+      }
+    }
+  }
+  return
+}
+
+// -----// IR Dump After Canonicalizer (canonicalize) //----- //
 func.func private @_sparse_sort_stable_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
   %c1 = arith.constant 1 : index
   %c0 = arith.constant 0 : index
@@ -5997,6 +6294,27 @@ func.func private @_sparse_sort_stable_1_index(%arg0: index, %arg1: index, %arg2
     memref.store %2, %arg2[%1] : memref<?xindex>
   }
   return
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_sparse_binary_search_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) -> index {
+  %c1 = arith.constant 1 : index
+  cf.br ^bb1(%arg0, %arg1 : index, index)
+^bb1(%0: index, %1: index):  // 2 preds: ^bb0, ^bb2
+  %2 = arith.cmpi ult, %0, %1 : index
+  cf.cond_br %2, ^bb2(%0, %1 : index, index), ^bb3
+^bb2(%3: index, %4: index):  // pred: ^bb1
+  %5 = arith.addi %3, %4 : index
+  %6 = arith.shrui %5, %c1 : index
+  %7 = arith.addi %6, %c1 : index
+  %8 = memref.load %arg2[%arg1] : memref<?xindex>
+  %9 = memref.load %arg2[%6] : memref<?xindex>
+  %10 = arith.cmpi ult, %8, %9 : index
+  %11 = arith.select %10, %3, %7 : index
+  %12 = arith.select %10, %6, %4 : index
+  cf.br ^bb1(%11, %12 : index, index)
+^bb3:  // pred: ^bb1
+  return %0 : index
 }
 
 // -----// IR Dump After Canonicalizer (canonicalize) //----- //
@@ -6196,335 +6514,6 @@ func.func private @_sparse_partition_1_index(%arg0: index, %arg1: index, %arg2: 
 }
 
 // -----// IR Dump After Canonicalizer (canonicalize) //----- //
-func.func private @_sparse_binary_search_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) -> index {
-  %c1 = arith.constant 1 : index
-  %0:2 = scf.while (%arg3 = %arg0, %arg4 = %arg1) : (index, index) -> (index, index) {
-    %1 = arith.cmpi ult, %arg3, %arg4 : index
-    scf.condition(%1) %arg3, %arg4 : index, index
-  } do {
-  ^bb0(%arg3: index, %arg4: index):
-    %1 = arith.addi %arg3, %arg4 : index
-    %2 = arith.shrui %1, %c1 : index
-    %3 = arith.addi %2, %c1 : index
-    %4 = memref.load %arg2[%arg1] : memref<?xindex>
-    %5 = memref.load %arg2[%2] : memref<?xindex>
-    %6 = arith.cmpi ult, %4, %5 : index
-    %7 = arith.select %6, %arg3, %3 : index
-    %8 = arith.select %6, %2, %arg4 : index
-    scf.yield %7, %8 : index, index
-  }
-  return %0#0 : index
-}
-
-// -----// IR Dump After Canonicalizer (canonicalize) //----- //
-func.func private @_sparse_shift_down_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: index) {
-  %c2 = arith.constant 2 : index
-  %c1 = arith.constant 1 : index
-  %0 = arith.cmpi uge, %arg3, %c2 : index
-  scf.if %0 {
-    %1 = arith.subi %arg1, %arg0 : index
-    %2 = arith.subi %arg3, %c2 : index
-    %3 = arith.shrui %2, %c1 : index
-    %4 = arith.cmpi uge, %3, %1 : index
-    scf.if %4 {
-      %5 = arith.shli %1, %c1 : index
-      %6 = arith.addi %5, %c1 : index
-      %7 = arith.addi %6, %arg0 : index
-      %8 = arith.addi %5, %c2 : index
-      %9 = arith.cmpi ult, %8, %arg3 : index
-      %10:2 = scf.if %9 -> (index, index) {
-        %12 = arith.addi %8, %arg0 : index
-        %13 = memref.load %arg2[%7] : memref<?xindex>
-        %14 = memref.load %arg2[%12] : memref<?xindex>
-        %15 = arith.cmpi ult, %13, %14 : index
-        %16 = arith.select %15, %8, %6 : index
-        %17 = arith.select %15, %12, %7 : index
-        scf.yield %16, %17 : index, index
-      } else {
-        scf.yield %6, %7 : index, index
-      }
-      %11:3 = scf.while (%arg4 = %arg1, %arg5 = %10#0, %arg6 = %10#1) : (index, index, index) -> (index, index, index) {
-        %12 = memref.load %arg2[%arg4] : memref<?xindex>
-        %13 = memref.load %arg2[%arg6] : memref<?xindex>
-        %14 = arith.cmpi ult, %12, %13 : index
-        scf.condition(%14) %arg4, %arg5, %arg6 : index, index, index
-      } do {
-      ^bb0(%arg4: index, %arg5: index, %arg6: index):
-        %12 = memref.load %arg2[%arg4] : memref<?xindex>
-        %13 = memref.load %arg2[%arg6] : memref<?xindex>
-        memref.store %13, %arg2[%arg4] : memref<?xindex>
-        memref.store %12, %arg2[%arg6] : memref<?xindex>
-        %14 = arith.cmpi uge, %3, %arg5 : index
-        %15:2 = scf.if %14 -> (index, index) {
-          %16 = arith.shli %arg5, %c1 : index
-          %17 = arith.addi %16, %c1 : index
-          %18 = arith.addi %17, %arg0 : index
-          %19 = arith.addi %16, %c2 : index
-          %20 = arith.cmpi ult, %19, %arg3 : index
-          %21:2 = scf.if %20 -> (index, index) {
-            %22 = arith.addi %19, %arg0 : index
-            %23 = memref.load %arg2[%18] : memref<?xindex>
-            %24 = memref.load %arg2[%22] : memref<?xindex>
-            %25 = arith.cmpi ult, %23, %24 : index
-            %26 = arith.select %25, %19, %17 : index
-            %27 = arith.select %25, %22, %18 : index
-            scf.yield %26, %27 : index, index
-          } else {
-            scf.yield %17, %18 : index, index
-          }
-          scf.yield %21#0, %21#1 : index, index
-        } else {
-          scf.yield %arg5, %arg6 : index, index
-        }
-        scf.yield %arg6, %15#0, %15#1 : index, index, index
-      }
-    }
-  }
-  return
-}
-
-// -----// IR Dump After Canonicalizer (canonicalize) //----- //
-func.func private @_sparse_hybrid_qsort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: i64) {
-  %c30 = arith.constant 30 : index
-  %c1_i64 = arith.constant 1 : i64
-  %c0_i64 = arith.constant 0 : i64
-  %c1 = arith.constant 1 : index
-  %c0 = arith.constant 0 : index
-  %0:2 = scf.while (%arg4 = %arg0, %arg5 = %arg1) : (index, index) -> (index, index) {
-    %1 = arith.addi %arg4, %c1 : index
-    %2 = arith.cmpi ult, %1, %arg5 : index
-    scf.condition(%2) %arg4, %arg5 : index, index
-  } do {
-  ^bb0(%arg4: index, %arg5: index):
-    %1 = arith.subi %arg5, %arg4 : index
-    %2 = arith.cmpi ule, %1, %c30 : index
-    %3:2 = scf.if %2 -> (index, index) {
-      func.call @_sparse_sort_stable_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> ()
-      scf.yield %arg4, %arg4 : index, index
-    } else {
-      %4 = arith.subi %arg3, %c1_i64 : i64
-      %5 = arith.cmpi ule, %4, %c0_i64 : i64
-      %6:2 = scf.if %5 -> (index, index) {
-        func.call @_sparse_heap_sort_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> ()
-        scf.yield %arg4, %arg4 : index, index
-      } else {
-        %7 = func.call @_sparse_partition_1_index(%arg4, %arg5, %arg2) : (index, index, memref<?xindex>) -> index
-        %8 = arith.addi %7, %c1 : index
-        %9 = arith.subi %7, %arg4 : index
-        %10 = arith.subi %arg5, %7 : index
-        %11 = arith.cmpi ule, %9, %10 : index
-        %12 = arith.select %11, %8, %arg4 : index
-        %13 = arith.select %11, %arg5, %7 : index
-        scf.if %11 {
-          %14 = arith.cmpi ne, %9, %c0 : index
-          scf.if %14 {
-            func.call @_sparse_hybrid_qsort_1_index(%arg4, %7, %arg2, %4) : (index, index, memref<?xindex>, i64) -> ()
-          }
-        } else {
-          %14 = arith.cmpi ne, %10, %c0 : index
-          scf.if %14 {
-            func.call @_sparse_hybrid_qsort_1_index(%8, %arg5, %arg2, %4) : (index, index, memref<?xindex>, i64) -> ()
-          }
-        }
-        scf.yield %12, %13 : index, index
-      }
-      scf.yield %6#0, %6#1 : index, index
-    }
-    scf.yield %3#0, %3#1 : index, index
-  }
-  return
-}
-
-// -----// IR Dump After Canonicalizer (canonicalize) //----- //
-func.func private @_insert_compressed_compressed_dense_128_128_32_f32_0_0(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xindex>, %arg3: memref<?xindex>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<3 x i64>, array<5 x i64>)>, %arg6: index, %arg7: index, %arg8: index, %arg9: f32) -> (memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
-  %c1 = arith.constant 1 : index
-  %c2 = arith.constant 2 : index
-  %cst = arith.constant 0.000000e+00 : f32
-  %c32 = arith.constant 32 : index
-  %false = arith.constant false
-  %c0 = arith.constant 0 : index
-  %0 = memref.load %arg0[%c0] : memref<?xindex>
-  %1 = memref.load %arg0[%c1] : memref<?xindex>
-  %2 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %3 = arith.index_cast %2 : i64 to index
-  %4 = arith.subi %1, %c1 : index
-  %5 = arith.cmpi ult, %0, %1 : index
-  %6 = scf.if %5 -> (i1) {
-    %21 = memref.load %arg1[%4] : memref<?xindex>
-    %22 = arith.cmpi eq, %21, %arg6 : index
-    scf.yield %22 : i1
-  } else {
-    scf.yield %false : i1
-  }
-  %7 = arith.select %6, %4, %3 : index
-  %8:3 = scf.if %6 -> (memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
-    scf.yield %arg1, %arg2, %arg5 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-  } else {
-    %21 = arith.addi %3, %c1 : index
-    memref.store %21, %arg0[%c1] : memref<?xindex>
-    %22 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %23 = arith.index_cast %22 : i64 to index
-    %dim = memref.dim %arg1, %c0 : memref<?xindex>
-    %24 = arith.addi %23, %c1 : index
-    %25 = arith.cmpi ugt, %24, %dim : index
-    %26 = scf.if %25 -> (memref<?xindex>) {
-      %36 = arith.muli %dim, %c2 : index
-      %37 = memref.realloc %arg1(%36) : memref<?xindex> to memref<?xindex>
-      scf.yield %37 : memref<?xindex>
-    } else {
-      scf.yield %arg1 : memref<?xindex>
-    }
-    memref.store %arg6, %26[%23] : memref<?xindex>
-    %27 = arith.index_cast %24 : index to i64
-    %28 = llvm.insertvalue %27, %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %29 = llvm.extractvalue %arg5[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %30 = arith.index_cast %29 : i64 to index
-    %dim_0 = memref.dim %arg2, %c0 : memref<?xindex>
-    %31 = arith.addi %30, %c1 : index
-    %32 = arith.cmpi ugt, %31, %dim_0 : index
-    %33 = scf.if %32 -> (memref<?xindex>) {
-      %36 = arith.muli %dim_0, %c2 : index
-      %37 = memref.realloc %arg2(%36) : memref<?xindex> to memref<?xindex>
-      scf.yield %37 : memref<?xindex>
-    } else {
-      scf.yield %arg2 : memref<?xindex>
-    }
-    memref.store %c0, %33[%30] : memref<?xindex>
-    %34 = arith.index_cast %31 : index to i64
-    %35 = llvm.insertvalue %34, %28[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    scf.yield %26, %33, %35 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-  }
-  %9 = arith.addi %7, %c1 : index
-  %10 = memref.load %8#1[%7] : memref<?xindex>
-  %11 = memref.load %8#1[%9] : memref<?xindex>
-  %12 = llvm.extractvalue %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %13 = arith.index_cast %12 : i64 to index
-  %14 = arith.subi %11, %c1 : index
-  %15 = arith.cmpi ult, %10, %11 : index
-  %16 = scf.if %15 -> (i1) {
-    %21 = memref.load %arg3[%14] : memref<?xindex>
-    %22 = arith.cmpi eq, %21, %arg7 : index
-    scf.yield %22 : i1
-  } else {
-    memref.store %13, %8#1[%7] : memref<?xindex>
-    scf.yield %false : i1
-  }
-  %17 = arith.select %16, %14, %13 : index
-  %18:3 = scf.if %16 -> (memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
-    scf.yield %arg3, %arg4, %8#2 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-  } else {
-    %21 = arith.addi %13, %c1 : index
-    memref.store %21, %8#1[%9] : memref<?xindex>
-    %22 = llvm.extractvalue %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %23 = arith.index_cast %22 : i64 to index
-    %dim = memref.dim %arg3, %c0 : memref<?xindex>
-    %24 = arith.addi %23, %c1 : index
-    %25 = arith.cmpi ugt, %24, %dim : index
-    %26 = scf.if %25 -> (memref<?xindex>) {
-      %36 = arith.muli %dim, %c2 : index
-      %37 = memref.realloc %arg3(%36) : memref<?xindex> to memref<?xindex>
-      scf.yield %37 : memref<?xindex>
-    } else {
-      scf.yield %arg3 : memref<?xindex>
-    }
-    memref.store %arg7, %26[%23] : memref<?xindex>
-    %27 = arith.index_cast %24 : index to i64
-    %28 = llvm.insertvalue %27, %8#2[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %29 = llvm.extractvalue %8#2[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    %30 = arith.index_cast %29 : i64 to index
-    %dim_0 = memref.dim %arg4, %c0 : memref<?xf32>
-    %31 = arith.addi %30, %c32 : index
-    %32 = arith.cmpi ugt, %31, %dim_0 : index
-    %33 = scf.if %32 -> (memref<?xf32>) {
-      %36 = scf.while (%arg10 = %dim_0) : (index) -> index {
-        %38 = arith.muli %arg10, %c2 : index
-        %39 = arith.cmpi ugt, %31, %38 : index
-        scf.condition(%39) %38 : index
-      } do {
-      ^bb0(%arg10: index):
-        scf.yield %arg10 : index
-      }
-      %37 = memref.realloc %arg4(%36) : memref<?xf32> to memref<?xf32>
-      scf.yield %37 : memref<?xf32>
-    } else {
-      scf.yield %arg4 : memref<?xf32>
-    }
-    %subview = memref.subview %33[%30] [32] [1] : memref<?xf32> to memref<32xf32, strided<[1], offset: ?>>
-    scf.for %arg10 = %c0 to %c32 step %c1 {
-      memref.store %cst, %subview[%arg10] : memref<32xf32, strided<[1], offset: ?>>
-    }
-    %34 = arith.index_cast %31 : index to i64
-    %35 = llvm.insertvalue %34, %28[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-    scf.yield %26, %33, %35 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-  }
-  %19 = arith.muli %17, %c32 : index
-  %20 = arith.addi %19, %arg8 : index
-  memref.store %arg9, %18#1[%20] : memref<?xf32>
-  return %arg0, %8#0, %8#1, %18#0, %18#1, %18#2 : memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-}
-
-// -----// IR Dump After Canonicalizer (canonicalize) //----- //
-func.func private @_sparse_heap_sort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
-  %c0 = arith.constant 0 : index
-  %c1 = arith.constant 1 : index
-  %c2 = arith.constant 2 : index
-  %0 = arith.subi %arg1, %arg0 : index
-  %1 = arith.subi %0, %c2 : index
-  %2 = arith.shrui %1, %c1 : index
-  %3 = arith.addi %2, %c1 : index
-  scf.for %arg3 = %c0 to %3 step %c1 {
-    %5 = arith.subi %2, %arg3 : index
-    %6 = arith.addi %arg0, %5 : index
-    func.call @_sparse_shift_down_1_index(%arg0, %6, %arg2, %0) : (index, index, memref<?xindex>, index) -> ()
-  }
-  %4 = arith.subi %0, %c1 : index
-  scf.for %arg3 = %c0 to %4 step %c1 {
-    %5 = arith.subi %0, %arg3 : index
-    %6 = arith.addi %arg0, %5 : index
-    %7 = arith.subi %6, %c1 : index
-    %8 = memref.load %arg2[%arg0] : memref<?xindex>
-    %9 = memref.load %arg2[%7] : memref<?xindex>
-    memref.store %9, %arg2[%arg0] : memref<?xindex>
-    memref.store %8, %arg2[%7] : memref<?xindex>
-    %10 = arith.subi %5, %c1 : index
-    func.call @_sparse_shift_down_1_index(%arg0, %arg0, %arg2, %10) : (index, index, memref<?xindex>, index) -> ()
-  }
-  return
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_sparse_sort_stable_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
-  %c1 = arith.constant 1 : index
-  %c0 = arith.constant 0 : index
-  %0 = arith.addi %arg0, %c1 : index
-  cf.br ^bb1(%0 : index)
-^bb1(%1: index):  // 2 preds: ^bb0, ^bb5
-  %2 = arith.cmpi slt, %1, %arg1 : index
-  cf.cond_br %2, ^bb2, ^bb6
-^bb2:  // pred: ^bb1
-  %3 = call @_sparse_binary_search_1_index(%arg0, %1, %arg2) : (index, index, memref<?xindex>) -> index
-  %4 = memref.load %arg2[%1] : memref<?xindex>
-  %5 = arith.subi %1, %3 : index
-  cf.br ^bb3(%c0 : index)
-^bb3(%6: index):  // 2 preds: ^bb2, ^bb4
-  %7 = arith.cmpi slt, %6, %5 : index
-  cf.cond_br %7, ^bb4, ^bb5
-^bb4:  // pred: ^bb3
-  %8 = arith.subi %1, %6 : index
-  %9 = arith.subi %8, %c1 : index
-  %10 = memref.load %arg2[%9] : memref<?xindex>
-  memref.store %10, %arg2[%8] : memref<?xindex>
-  %11 = arith.addi %6, %c1 : index
-  cf.br ^bb3(%11 : index)
-^bb5:  // pred: ^bb3
-  memref.store %4, %arg2[%3] : memref<?xindex>
-  %12 = arith.addi %1, %c1 : index
-  cf.br ^bb1(%12 : index)
-^bb6:  // pred: ^bb1
-  return
-}
-
-// -----// IR Dump After Canonicalizer (canonicalize) //----- //
 func.func @MTTKRP.A.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xindex>, %arg3: memref<?xindex>, %arg4: memref<?xindex>, %arg5: memref<?xindex>, %arg6: memref<?xf32>, %arg7: !llvm.struct<(array<3 x i64>, array<7 x i64>)>, %arg8: memref<?xf32>, %arg9: !llvm.struct<(array<2 x i64>, array<1 x i64>)>, %arg10: memref<?xf32>, %arg11: !llvm.struct<(array<2 x i64>, array<1 x i64>)>) -> (memref<?xf32>, !llvm.struct<(array<2 x i64>, array<1 x i64>)>) attributes {llvm.emit_c_interface} {
   %c0 = arith.constant 0 : index
   %c32 = arith.constant 32 : index
@@ -6691,6 +6680,380 @@ func.func @MTTKRP.A.0.main(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2
     omp.terminator
   }
   return %cast_13, %23 : memref<?xf32>, !llvm.struct<(array<2 x i64>, array<1 x i64>)>
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_insert_compressed_compressed_dense_128_128_32_f32_0_0(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xindex>, %arg3: memref<?xindex>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<3 x i64>, array<5 x i64>)>, %arg6: index, %arg7: index, %arg8: index, %arg9: f32) -> (memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %cst = arith.constant 0.000000e+00 : f32
+  %c32 = arith.constant 32 : index
+  %false = arith.constant false
+  %c0 = arith.constant 0 : index
+  %0 = memref.load %arg0[%c0] : memref<?xindex>
+  %1 = memref.load %arg0[%c1] : memref<?xindex>
+  %2 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %3 = arith.index_cast %2 : i64 to index
+  %4 = arith.subi %1, %c1 : index
+  %5 = arith.cmpi ult, %0, %1 : index
+  cf.cond_br %5, ^bb1, ^bb2
+^bb1:  // pred: ^bb0
+  %6 = memref.load %arg1[%4] : memref<?xindex>
+  %7 = arith.cmpi eq, %6, %arg6 : index
+  cf.br ^bb3(%7 : i1)
+^bb2:  // pred: ^bb0
+  cf.br ^bb3(%false : i1)
+^bb3(%8: i1):  // 2 preds: ^bb1, ^bb2
+  cf.br ^bb4
+^bb4:  // pred: ^bb3
+  %9 = arith.select %8, %4, %3 : index
+  cf.cond_br %8, ^bb5, ^bb6
+^bb5:  // pred: ^bb4
+  cf.br ^bb15(%arg1, %arg2, %arg5 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
+^bb6:  // pred: ^bb4
+  %10 = arith.addi %3, %c1 : index
+  memref.store %10, %arg0[%c1] : memref<?xindex>
+  %11 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %12 = arith.index_cast %11 : i64 to index
+  %dim = memref.dim %arg1, %c0 : memref<?xindex>
+  %13 = arith.addi %12, %c1 : index
+  %14 = arith.cmpi ugt, %13, %dim : index
+  cf.cond_br %14, ^bb7, ^bb8
+^bb7:  // pred: ^bb6
+  %15 = arith.muli %dim, %c2 : index
+  %16 = memref.realloc %arg1(%15) : memref<?xindex> to memref<?xindex>
+  cf.br ^bb9(%16 : memref<?xindex>)
+^bb8:  // pred: ^bb6
+  cf.br ^bb9(%arg1 : memref<?xindex>)
+^bb9(%17: memref<?xindex>):  // 2 preds: ^bb7, ^bb8
+  cf.br ^bb10
+^bb10:  // pred: ^bb9
+  memref.store %arg6, %17[%12] : memref<?xindex>
+  %18 = arith.index_cast %13 : index to i64
+  %19 = llvm.insertvalue %18, %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %20 = llvm.extractvalue %arg5[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %21 = arith.index_cast %20 : i64 to index
+  %dim_0 = memref.dim %arg2, %c0 : memref<?xindex>
+  %22 = arith.addi %21, %c1 : index
+  %23 = arith.cmpi ugt, %22, %dim_0 : index
+  cf.cond_br %23, ^bb11, ^bb12
+^bb11:  // pred: ^bb10
+  %24 = arith.muli %dim_0, %c2 : index
+  %25 = memref.realloc %arg2(%24) : memref<?xindex> to memref<?xindex>
+  cf.br ^bb13(%25 : memref<?xindex>)
+^bb12:  // pred: ^bb10
+  cf.br ^bb13(%arg2 : memref<?xindex>)
+^bb13(%26: memref<?xindex>):  // 2 preds: ^bb11, ^bb12
+  cf.br ^bb14
+^bb14:  // pred: ^bb13
+  memref.store %c0, %26[%21] : memref<?xindex>
+  %27 = arith.index_cast %22 : index to i64
+  %28 = llvm.insertvalue %27, %19[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  cf.br ^bb15(%17, %26, %28 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
+^bb15(%29: memref<?xindex>, %30: memref<?xindex>, %31: !llvm.struct<(array<3 x i64>, array<5 x i64>)>):  // 2 preds: ^bb5, ^bb14
+  cf.br ^bb16
+^bb16:  // pred: ^bb15
+  %32 = arith.addi %9, %c1 : index
+  %33 = memref.load %30[%9] : memref<?xindex>
+  %34 = memref.load %30[%32] : memref<?xindex>
+  %35 = llvm.extractvalue %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %36 = arith.index_cast %35 : i64 to index
+  %37 = arith.subi %34, %c1 : index
+  %38 = arith.cmpi ult, %33, %34 : index
+  cf.cond_br %38, ^bb17, ^bb18
+^bb17:  // pred: ^bb16
+  %39 = memref.load %arg3[%37] : memref<?xindex>
+  %40 = arith.cmpi eq, %39, %arg7 : index
+  cf.br ^bb19(%40 : i1)
+^bb18:  // pred: ^bb16
+  memref.store %36, %30[%9] : memref<?xindex>
+  cf.br ^bb19(%false : i1)
+^bb19(%41: i1):  // 2 preds: ^bb17, ^bb18
+  cf.br ^bb20
+^bb20:  // pred: ^bb19
+  %42 = arith.select %41, %37, %36 : index
+  cf.cond_br %41, ^bb21, ^bb22
+^bb21:  // pred: ^bb20
+  cf.br ^bb36(%arg3, %arg4, %31 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
+^bb22:  // pred: ^bb20
+  %43 = arith.addi %36, %c1 : index
+  memref.store %43, %30[%32] : memref<?xindex>
+  %44 = llvm.extractvalue %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %45 = arith.index_cast %44 : i64 to index
+  %dim_1 = memref.dim %arg3, %c0 : memref<?xindex>
+  %46 = arith.addi %45, %c1 : index
+  %47 = arith.cmpi ugt, %46, %dim_1 : index
+  cf.cond_br %47, ^bb23, ^bb24
+^bb23:  // pred: ^bb22
+  %48 = arith.muli %dim_1, %c2 : index
+  %49 = memref.realloc %arg3(%48) : memref<?xindex> to memref<?xindex>
+  cf.br ^bb25(%49 : memref<?xindex>)
+^bb24:  // pred: ^bb22
+  cf.br ^bb25(%arg3 : memref<?xindex>)
+^bb25(%50: memref<?xindex>):  // 2 preds: ^bb23, ^bb24
+  cf.br ^bb26
+^bb26:  // pred: ^bb25
+  memref.store %arg7, %50[%45] : memref<?xindex>
+  %51 = arith.index_cast %46 : index to i64
+  %52 = llvm.insertvalue %51, %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %53 = llvm.extractvalue %31[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  %54 = arith.index_cast %53 : i64 to index
+  %dim_2 = memref.dim %arg4, %c0 : memref<?xf32>
+  %55 = arith.addi %54, %c32 : index
+  %56 = arith.cmpi ugt, %55, %dim_2 : index
+  cf.cond_br %56, ^bb27, ^bb30
+^bb27:  // pred: ^bb26
+  cf.br ^bb28(%dim_2 : index)
+^bb28(%57: index):  // 2 preds: ^bb27, ^bb28
+  %58 = arith.muli %57, %c2 : index
+  %59 = arith.cmpi ugt, %55, %58 : index
+  cf.cond_br %59, ^bb28(%58 : index), ^bb29
+^bb29:  // pred: ^bb28
+  %60 = memref.realloc %arg4(%58) : memref<?xf32> to memref<?xf32>
+  cf.br ^bb31(%60 : memref<?xf32>)
+^bb30:  // pred: ^bb26
+  cf.br ^bb31(%arg4 : memref<?xf32>)
+^bb31(%61: memref<?xf32>):  // 2 preds: ^bb29, ^bb30
+  cf.br ^bb32
+^bb32:  // pred: ^bb31
+  %subview = memref.subview %61[%54] [32] [1] : memref<?xf32> to memref<32xf32, strided<[1], offset: ?>>
+  cf.br ^bb33(%c0 : index)
+^bb33(%62: index):  // 2 preds: ^bb32, ^bb34
+  %63 = arith.cmpi slt, %62, %c32 : index
+  cf.cond_br %63, ^bb34, ^bb35
+^bb34:  // pred: ^bb33
+  memref.store %cst, %subview[%62] : memref<32xf32, strided<[1], offset: ?>>
+  %64 = arith.addi %62, %c1 : index
+  cf.br ^bb33(%64 : index)
+^bb35:  // pred: ^bb33
+  %65 = arith.index_cast %55 : index to i64
+  %66 = llvm.insertvalue %65, %52[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
+  cf.br ^bb36(%50, %61, %66 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
+^bb36(%67: memref<?xindex>, %68: memref<?xf32>, %69: !llvm.struct<(array<3 x i64>, array<5 x i64>)>):  // 2 preds: ^bb21, ^bb35
+  cf.br ^bb37
+^bb37:  // pred: ^bb36
+  %70 = arith.muli %42, %c32 : index
+  %71 = arith.addi %70, %arg8 : index
+  memref.store %arg9, %68[%71] : memref<?xf32>
+  return %arg0, %29, %30, %67, %68, %69 : memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_sparse_heap_sort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %0 = arith.subi %arg1, %arg0 : index
+  %1 = arith.subi %0, %c2 : index
+  %2 = arith.shrui %1, %c1 : index
+  %3 = arith.addi %2, %c1 : index
+  cf.br ^bb1(%c0 : index)
+^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
+  %5 = arith.cmpi slt, %4, %3 : index
+  cf.cond_br %5, ^bb2, ^bb3
+^bb2:  // pred: ^bb1
+  %6 = arith.subi %2, %4 : index
+  %7 = arith.addi %arg0, %6 : index
+  call @_sparse_shift_down_1_index(%arg0, %7, %arg2, %0) : (index, index, memref<?xindex>, index) -> ()
+  %8 = arith.addi %4, %c1 : index
+  cf.br ^bb1(%8 : index)
+^bb3:  // pred: ^bb1
+  %9 = arith.subi %0, %c1 : index
+  cf.br ^bb4(%c0 : index)
+^bb4(%10: index):  // 2 preds: ^bb3, ^bb5
+  %11 = arith.cmpi slt, %10, %9 : index
+  cf.cond_br %11, ^bb5, ^bb6
+^bb5:  // pred: ^bb4
+  %12 = arith.subi %0, %10 : index
+  %13 = arith.addi %arg0, %12 : index
+  %14 = arith.subi %13, %c1 : index
+  %15 = memref.load %arg2[%arg0] : memref<?xindex>
+  %16 = memref.load %arg2[%14] : memref<?xindex>
+  memref.store %16, %arg2[%arg0] : memref<?xindex>
+  memref.store %15, %arg2[%14] : memref<?xindex>
+  %17 = arith.subi %12, %c1 : index
+  call @_sparse_shift_down_1_index(%arg0, %arg0, %arg2, %17) : (index, index, memref<?xindex>, index) -> ()
+  %18 = arith.addi %10, %c1 : index
+  cf.br ^bb4(%18 : index)
+^bb6:  // pred: ^bb4
+  return
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_sparse_hybrid_qsort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: i64) {
+  %c30 = arith.constant 30 : index
+  %c1_i64 = arith.constant 1 : i64
+  %c0_i64 = arith.constant 0 : i64
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  cf.br ^bb1(%arg0, %arg1 : index, index)
+^bb1(%0: index, %1: index):  // 2 preds: ^bb0, ^bb17
+  %2 = arith.addi %0, %c1 : index
+  %3 = arith.cmpi ult, %2, %1 : index
+  cf.cond_br %3, ^bb2(%0, %1 : index, index), ^bb18
+^bb2(%4: index, %5: index):  // pred: ^bb1
+  %6 = arith.subi %5, %4 : index
+  %7 = arith.cmpi ule, %6, %c30 : index
+  cf.cond_br %7, ^bb3, ^bb4
+^bb3:  // pred: ^bb2
+  call @_sparse_sort_stable_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> ()
+  cf.br ^bb16(%4, %4 : index, index)
+^bb4:  // pred: ^bb2
+  %8 = arith.subi %arg3, %c1_i64 : i64
+  %9 = arith.cmpi ule, %8, %c0_i64 : i64
+  cf.cond_br %9, ^bb5, ^bb6
+^bb5:  // pred: ^bb4
+  call @_sparse_heap_sort_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> ()
+  cf.br ^bb14(%4, %4 : index, index)
+^bb6:  // pred: ^bb4
+  %10 = call @_sparse_partition_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> index
+  %11 = arith.addi %10, %c1 : index
+  %12 = arith.subi %10, %4 : index
+  %13 = arith.subi %5, %10 : index
+  %14 = arith.cmpi ule, %12, %13 : index
+  %15 = arith.select %14, %11, %4 : index
+  %16 = arith.select %14, %5, %10 : index
+  cf.cond_br %14, ^bb7, ^bb10
+^bb7:  // pred: ^bb6
+  %17 = arith.cmpi ne, %12, %c0 : index
+  cf.cond_br %17, ^bb8, ^bb9
+^bb8:  // pred: ^bb7
+  call @_sparse_hybrid_qsort_1_index(%4, %10, %arg2, %8) : (index, index, memref<?xindex>, i64) -> ()
+  cf.br ^bb9
+^bb9:  // 2 preds: ^bb7, ^bb8
+  cf.br ^bb13
+^bb10:  // pred: ^bb6
+  %18 = arith.cmpi ne, %13, %c0 : index
+  cf.cond_br %18, ^bb11, ^bb12
+^bb11:  // pred: ^bb10
+  call @_sparse_hybrid_qsort_1_index(%11, %5, %arg2, %8) : (index, index, memref<?xindex>, i64) -> ()
+  cf.br ^bb12
+^bb12:  // 2 preds: ^bb10, ^bb11
+  cf.br ^bb13
+^bb13:  // 2 preds: ^bb9, ^bb12
+  cf.br ^bb14(%15, %16 : index, index)
+^bb14(%19: index, %20: index):  // 2 preds: ^bb5, ^bb13
+  cf.br ^bb15
+^bb15:  // pred: ^bb14
+  cf.br ^bb16(%19, %20 : index, index)
+^bb16(%21: index, %22: index):  // 2 preds: ^bb3, ^bb15
+  cf.br ^bb17
+^bb17:  // pred: ^bb16
+  cf.br ^bb1(%21, %22 : index, index)
+^bb18:  // pred: ^bb1
+  return
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_sparse_shift_down_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: index) {
+  %c2 = arith.constant 2 : index
+  %c1 = arith.constant 1 : index
+  %0 = arith.cmpi uge, %arg3, %c2 : index
+  cf.cond_br %0, ^bb1, ^bb19
+^bb1:  // pred: ^bb0
+  %1 = arith.subi %arg1, %arg0 : index
+  %2 = arith.subi %arg3, %c2 : index
+  %3 = arith.shrui %2, %c1 : index
+  %4 = arith.cmpi uge, %3, %1 : index
+  cf.cond_br %4, ^bb2, ^bb18
+^bb2:  // pred: ^bb1
+  %5 = arith.shli %1, %c1 : index
+  %6 = arith.addi %5, %c1 : index
+  %7 = arith.addi %6, %arg0 : index
+  %8 = arith.addi %5, %c2 : index
+  %9 = arith.cmpi ult, %8, %arg3 : index
+  cf.cond_br %9, ^bb3, ^bb4
+^bb3:  // pred: ^bb2
+  %10 = arith.addi %8, %arg0 : index
+  %11 = memref.load %arg2[%7] : memref<?xindex>
+  %12 = memref.load %arg2[%10] : memref<?xindex>
+  %13 = arith.cmpi ult, %11, %12 : index
+  %14 = arith.select %13, %8, %6 : index
+  %15 = arith.select %13, %10, %7 : index
+  cf.br ^bb5(%14, %15 : index, index)
+^bb4:  // pred: ^bb2
+  cf.br ^bb5(%6, %7 : index, index)
+^bb5(%16: index, %17: index):  // 2 preds: ^bb3, ^bb4
+  cf.br ^bb6
+^bb6:  // pred: ^bb5
+  cf.br ^bb7(%arg1, %16, %17 : index, index, index)
+^bb7(%18: index, %19: index, %20: index):  // 2 preds: ^bb6, ^bb16
+  %21 = memref.load %arg2[%18] : memref<?xindex>
+  %22 = memref.load %arg2[%20] : memref<?xindex>
+  %23 = arith.cmpi ult, %21, %22 : index
+  cf.cond_br %23, ^bb8(%18, %19, %20 : index, index, index), ^bb17
+^bb8(%24: index, %25: index, %26: index):  // pred: ^bb7
+  %27 = memref.load %arg2[%24] : memref<?xindex>
+  %28 = memref.load %arg2[%26] : memref<?xindex>
+  memref.store %28, %arg2[%24] : memref<?xindex>
+  memref.store %27, %arg2[%26] : memref<?xindex>
+  %29 = arith.cmpi uge, %3, %25 : index
+  cf.cond_br %29, ^bb9, ^bb14
+^bb9:  // pred: ^bb8
+  %30 = arith.shli %25, %c1 : index
+  %31 = arith.addi %30, %c1 : index
+  %32 = arith.addi %31, %arg0 : index
+  %33 = arith.addi %30, %c2 : index
+  %34 = arith.cmpi ult, %33, %arg3 : index
+  cf.cond_br %34, ^bb10, ^bb11
+^bb10:  // pred: ^bb9
+  %35 = arith.addi %33, %arg0 : index
+  %36 = memref.load %arg2[%32] : memref<?xindex>
+  %37 = memref.load %arg2[%35] : memref<?xindex>
+  %38 = arith.cmpi ult, %36, %37 : index
+  %39 = arith.select %38, %33, %31 : index
+  %40 = arith.select %38, %35, %32 : index
+  cf.br ^bb12(%39, %40 : index, index)
+^bb11:  // pred: ^bb9
+  cf.br ^bb12(%31, %32 : index, index)
+^bb12(%41: index, %42: index):  // 2 preds: ^bb10, ^bb11
+  cf.br ^bb13
+^bb13:  // pred: ^bb12
+  cf.br ^bb15(%41, %42 : index, index)
+^bb14:  // pred: ^bb8
+  cf.br ^bb15(%25, %26 : index, index)
+^bb15(%43: index, %44: index):  // 2 preds: ^bb13, ^bb14
+  cf.br ^bb16
+^bb16:  // pred: ^bb15
+  cf.br ^bb7(%26, %43, %44 : index, index, index)
+^bb17:  // pred: ^bb7
+  cf.br ^bb18
+^bb18:  // 2 preds: ^bb1, ^bb17
+  cf.br ^bb19
+^bb19:  // 2 preds: ^bb0, ^bb18
+  return
+}
+
+// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
+func.func private @_sparse_sort_stable_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  %0 = arith.addi %arg0, %c1 : index
+  cf.br ^bb1(%0 : index)
+^bb1(%1: index):  // 2 preds: ^bb0, ^bb5
+  %2 = arith.cmpi slt, %1, %arg1 : index
+  cf.cond_br %2, ^bb2, ^bb6
+^bb2:  // pred: ^bb1
+  %3 = call @_sparse_binary_search_1_index(%arg0, %1, %arg2) : (index, index, memref<?xindex>) -> index
+  %4 = memref.load %arg2[%1] : memref<?xindex>
+  %5 = arith.subi %1, %3 : index
+  cf.br ^bb3(%c0 : index)
+^bb3(%6: index):  // 2 preds: ^bb2, ^bb4
+  %7 = arith.cmpi slt, %6, %5 : index
+  cf.cond_br %7, ^bb4, ^bb5
+^bb4:  // pred: ^bb3
+  %8 = arith.subi %1, %6 : index
+  %9 = arith.subi %8, %c1 : index
+  %10 = memref.load %arg2[%9] : memref<?xindex>
+  memref.store %10, %arg2[%8] : memref<?xindex>
+  %11 = arith.addi %6, %c1 : index
+  cf.br ^bb3(%11 : index)
+^bb5:  // pred: ^bb3
+  memref.store %4, %arg2[%3] : memref<?xindex>
+  %12 = arith.addi %1, %c1 : index
+  cf.br ^bb1(%12 : index)
+^bb6:  // pred: ^bb1
+  return
 }
 
 // -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
@@ -6925,369 +7288,6 @@ func.func private @_sparse_partition_1_index(%arg0: index, %arg1: index, %arg2: 
   cf.br ^bb30(%111, %112, %113 : index, index, index)
 ^bb50:  // pred: ^bb30
   return %76 : index
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_sparse_binary_search_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) -> index {
-  %c1 = arith.constant 1 : index
-  cf.br ^bb1(%arg0, %arg1 : index, index)
-^bb1(%0: index, %1: index):  // 2 preds: ^bb0, ^bb2
-  %2 = arith.cmpi ult, %0, %1 : index
-  cf.cond_br %2, ^bb2(%0, %1 : index, index), ^bb3
-^bb2(%3: index, %4: index):  // pred: ^bb1
-  %5 = arith.addi %3, %4 : index
-  %6 = arith.shrui %5, %c1 : index
-  %7 = arith.addi %6, %c1 : index
-  %8 = memref.load %arg2[%arg1] : memref<?xindex>
-  %9 = memref.load %arg2[%6] : memref<?xindex>
-  %10 = arith.cmpi ult, %8, %9 : index
-  %11 = arith.select %10, %3, %7 : index
-  %12 = arith.select %10, %6, %4 : index
-  cf.br ^bb1(%11, %12 : index, index)
-^bb3:  // pred: ^bb1
-  return %0 : index
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_sparse_shift_down_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: index) {
-  %c2 = arith.constant 2 : index
-  %c1 = arith.constant 1 : index
-  %0 = arith.cmpi uge, %arg3, %c2 : index
-  cf.cond_br %0, ^bb1, ^bb19
-^bb1:  // pred: ^bb0
-  %1 = arith.subi %arg1, %arg0 : index
-  %2 = arith.subi %arg3, %c2 : index
-  %3 = arith.shrui %2, %c1 : index
-  %4 = arith.cmpi uge, %3, %1 : index
-  cf.cond_br %4, ^bb2, ^bb18
-^bb2:  // pred: ^bb1
-  %5 = arith.shli %1, %c1 : index
-  %6 = arith.addi %5, %c1 : index
-  %7 = arith.addi %6, %arg0 : index
-  %8 = arith.addi %5, %c2 : index
-  %9 = arith.cmpi ult, %8, %arg3 : index
-  cf.cond_br %9, ^bb3, ^bb4
-^bb3:  // pred: ^bb2
-  %10 = arith.addi %8, %arg0 : index
-  %11 = memref.load %arg2[%7] : memref<?xindex>
-  %12 = memref.load %arg2[%10] : memref<?xindex>
-  %13 = arith.cmpi ult, %11, %12 : index
-  %14 = arith.select %13, %8, %6 : index
-  %15 = arith.select %13, %10, %7 : index
-  cf.br ^bb5(%14, %15 : index, index)
-^bb4:  // pred: ^bb2
-  cf.br ^bb5(%6, %7 : index, index)
-^bb5(%16: index, %17: index):  // 2 preds: ^bb3, ^bb4
-  cf.br ^bb6
-^bb6:  // pred: ^bb5
-  cf.br ^bb7(%arg1, %16, %17 : index, index, index)
-^bb7(%18: index, %19: index, %20: index):  // 2 preds: ^bb6, ^bb16
-  %21 = memref.load %arg2[%18] : memref<?xindex>
-  %22 = memref.load %arg2[%20] : memref<?xindex>
-  %23 = arith.cmpi ult, %21, %22 : index
-  cf.cond_br %23, ^bb8(%18, %19, %20 : index, index, index), ^bb17
-^bb8(%24: index, %25: index, %26: index):  // pred: ^bb7
-  %27 = memref.load %arg2[%24] : memref<?xindex>
-  %28 = memref.load %arg2[%26] : memref<?xindex>
-  memref.store %28, %arg2[%24] : memref<?xindex>
-  memref.store %27, %arg2[%26] : memref<?xindex>
-  %29 = arith.cmpi uge, %3, %25 : index
-  cf.cond_br %29, ^bb9, ^bb14
-^bb9:  // pred: ^bb8
-  %30 = arith.shli %25, %c1 : index
-  %31 = arith.addi %30, %c1 : index
-  %32 = arith.addi %31, %arg0 : index
-  %33 = arith.addi %30, %c2 : index
-  %34 = arith.cmpi ult, %33, %arg3 : index
-  cf.cond_br %34, ^bb10, ^bb11
-^bb10:  // pred: ^bb9
-  %35 = arith.addi %33, %arg0 : index
-  %36 = memref.load %arg2[%32] : memref<?xindex>
-  %37 = memref.load %arg2[%35] : memref<?xindex>
-  %38 = arith.cmpi ult, %36, %37 : index
-  %39 = arith.select %38, %33, %31 : index
-  %40 = arith.select %38, %35, %32 : index
-  cf.br ^bb12(%39, %40 : index, index)
-^bb11:  // pred: ^bb9
-  cf.br ^bb12(%31, %32 : index, index)
-^bb12(%41: index, %42: index):  // 2 preds: ^bb10, ^bb11
-  cf.br ^bb13
-^bb13:  // pred: ^bb12
-  cf.br ^bb15(%41, %42 : index, index)
-^bb14:  // pred: ^bb8
-  cf.br ^bb15(%25, %26 : index, index)
-^bb15(%43: index, %44: index):  // 2 preds: ^bb13, ^bb14
-  cf.br ^bb16
-^bb16:  // pred: ^bb15
-  cf.br ^bb7(%26, %43, %44 : index, index, index)
-^bb17:  // pred: ^bb7
-  cf.br ^bb18
-^bb18:  // 2 preds: ^bb1, ^bb17
-  cf.br ^bb19
-^bb19:  // 2 preds: ^bb0, ^bb18
-  return
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_sparse_hybrid_qsort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>, %arg3: i64) {
-  %c30 = arith.constant 30 : index
-  %c1_i64 = arith.constant 1 : i64
-  %c0_i64 = arith.constant 0 : i64
-  %c1 = arith.constant 1 : index
-  %c0 = arith.constant 0 : index
-  cf.br ^bb1(%arg0, %arg1 : index, index)
-^bb1(%0: index, %1: index):  // 2 preds: ^bb0, ^bb17
-  %2 = arith.addi %0, %c1 : index
-  %3 = arith.cmpi ult, %2, %1 : index
-  cf.cond_br %3, ^bb2(%0, %1 : index, index), ^bb18
-^bb2(%4: index, %5: index):  // pred: ^bb1
-  %6 = arith.subi %5, %4 : index
-  %7 = arith.cmpi ule, %6, %c30 : index
-  cf.cond_br %7, ^bb3, ^bb4
-^bb3:  // pred: ^bb2
-  call @_sparse_sort_stable_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> ()
-  cf.br ^bb16(%4, %4 : index, index)
-^bb4:  // pred: ^bb2
-  %8 = arith.subi %arg3, %c1_i64 : i64
-  %9 = arith.cmpi ule, %8, %c0_i64 : i64
-  cf.cond_br %9, ^bb5, ^bb6
-^bb5:  // pred: ^bb4
-  call @_sparse_heap_sort_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> ()
-  cf.br ^bb14(%4, %4 : index, index)
-^bb6:  // pred: ^bb4
-  %10 = call @_sparse_partition_1_index(%4, %5, %arg2) : (index, index, memref<?xindex>) -> index
-  %11 = arith.addi %10, %c1 : index
-  %12 = arith.subi %10, %4 : index
-  %13 = arith.subi %5, %10 : index
-  %14 = arith.cmpi ule, %12, %13 : index
-  %15 = arith.select %14, %11, %4 : index
-  %16 = arith.select %14, %5, %10 : index
-  cf.cond_br %14, ^bb7, ^bb10
-^bb7:  // pred: ^bb6
-  %17 = arith.cmpi ne, %12, %c0 : index
-  cf.cond_br %17, ^bb8, ^bb9
-^bb8:  // pred: ^bb7
-  call @_sparse_hybrid_qsort_1_index(%4, %10, %arg2, %8) : (index, index, memref<?xindex>, i64) -> ()
-  cf.br ^bb9
-^bb9:  // 2 preds: ^bb7, ^bb8
-  cf.br ^bb13
-^bb10:  // pred: ^bb6
-  %18 = arith.cmpi ne, %13, %c0 : index
-  cf.cond_br %18, ^bb11, ^bb12
-^bb11:  // pred: ^bb10
-  call @_sparse_hybrid_qsort_1_index(%11, %5, %arg2, %8) : (index, index, memref<?xindex>, i64) -> ()
-  cf.br ^bb12
-^bb12:  // 2 preds: ^bb10, ^bb11
-  cf.br ^bb13
-^bb13:  // 2 preds: ^bb9, ^bb12
-  cf.br ^bb14(%15, %16 : index, index)
-^bb14(%19: index, %20: index):  // 2 preds: ^bb5, ^bb13
-  cf.br ^bb15
-^bb15:  // pred: ^bb14
-  cf.br ^bb16(%19, %20 : index, index)
-^bb16(%21: index, %22: index):  // 2 preds: ^bb3, ^bb15
-  cf.br ^bb17
-^bb17:  // pred: ^bb16
-  cf.br ^bb1(%21, %22 : index, index)
-^bb18:  // pred: ^bb1
-  return
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_insert_compressed_compressed_dense_128_128_32_f32_0_0(%arg0: memref<?xindex>, %arg1: memref<?xindex>, %arg2: memref<?xindex>, %arg3: memref<?xindex>, %arg4: memref<?xf32>, %arg5: !llvm.struct<(array<3 x i64>, array<5 x i64>)>, %arg6: index, %arg7: index, %arg8: index, %arg9: f32) -> (memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>) {
-  %c1 = arith.constant 1 : index
-  %c2 = arith.constant 2 : index
-  %cst = arith.constant 0.000000e+00 : f32
-  %c32 = arith.constant 32 : index
-  %false = arith.constant false
-  %c0 = arith.constant 0 : index
-  %0 = memref.load %arg0[%c0] : memref<?xindex>
-  %1 = memref.load %arg0[%c1] : memref<?xindex>
-  %2 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %3 = arith.index_cast %2 : i64 to index
-  %4 = arith.subi %1, %c1 : index
-  %5 = arith.cmpi ult, %0, %1 : index
-  cf.cond_br %5, ^bb1, ^bb2
-^bb1:  // pred: ^bb0
-  %6 = memref.load %arg1[%4] : memref<?xindex>
-  %7 = arith.cmpi eq, %6, %arg6 : index
-  cf.br ^bb3(%7 : i1)
-^bb2:  // pred: ^bb0
-  cf.br ^bb3(%false : i1)
-^bb3(%8: i1):  // 2 preds: ^bb1, ^bb2
-  cf.br ^bb4
-^bb4:  // pred: ^bb3
-  %9 = arith.select %8, %4, %3 : index
-  cf.cond_br %8, ^bb5, ^bb6
-^bb5:  // pred: ^bb4
-  cf.br ^bb15(%arg1, %arg2, %arg5 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
-^bb6:  // pred: ^bb4
-  %10 = arith.addi %3, %c1 : index
-  memref.store %10, %arg0[%c1] : memref<?xindex>
-  %11 = llvm.extractvalue %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %12 = arith.index_cast %11 : i64 to index
-  %dim = memref.dim %arg1, %c0 : memref<?xindex>
-  %13 = arith.addi %12, %c1 : index
-  %14 = arith.cmpi ugt, %13, %dim : index
-  cf.cond_br %14, ^bb7, ^bb8
-^bb7:  // pred: ^bb6
-  %15 = arith.muli %dim, %c2 : index
-  %16 = memref.realloc %arg1(%15) : memref<?xindex> to memref<?xindex>
-  cf.br ^bb9(%16 : memref<?xindex>)
-^bb8:  // pred: ^bb6
-  cf.br ^bb9(%arg1 : memref<?xindex>)
-^bb9(%17: memref<?xindex>):  // 2 preds: ^bb7, ^bb8
-  cf.br ^bb10
-^bb10:  // pred: ^bb9
-  memref.store %arg6, %17[%12] : memref<?xindex>
-  %18 = arith.index_cast %13 : index to i64
-  %19 = llvm.insertvalue %18, %arg5[1, 1] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %20 = llvm.extractvalue %arg5[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %21 = arith.index_cast %20 : i64 to index
-  %dim_0 = memref.dim %arg2, %c0 : memref<?xindex>
-  %22 = arith.addi %21, %c1 : index
-  %23 = arith.cmpi ugt, %22, %dim_0 : index
-  cf.cond_br %23, ^bb11, ^bb12
-^bb11:  // pred: ^bb10
-  %24 = arith.muli %dim_0, %c2 : index
-  %25 = memref.realloc %arg2(%24) : memref<?xindex> to memref<?xindex>
-  cf.br ^bb13(%25 : memref<?xindex>)
-^bb12:  // pred: ^bb10
-  cf.br ^bb13(%arg2 : memref<?xindex>)
-^bb13(%26: memref<?xindex>):  // 2 preds: ^bb11, ^bb12
-  cf.br ^bb14
-^bb14:  // pred: ^bb13
-  memref.store %c0, %26[%21] : memref<?xindex>
-  %27 = arith.index_cast %22 : index to i64
-  %28 = llvm.insertvalue %27, %19[1, 2] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  cf.br ^bb15(%17, %26, %28 : memref<?xindex>, memref<?xindex>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
-^bb15(%29: memref<?xindex>, %30: memref<?xindex>, %31: !llvm.struct<(array<3 x i64>, array<5 x i64>)>):  // 2 preds: ^bb5, ^bb14
-  cf.br ^bb16
-^bb16:  // pred: ^bb15
-  %32 = arith.addi %9, %c1 : index
-  %33 = memref.load %30[%9] : memref<?xindex>
-  %34 = memref.load %30[%32] : memref<?xindex>
-  %35 = llvm.extractvalue %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %36 = arith.index_cast %35 : i64 to index
-  %37 = arith.subi %34, %c1 : index
-  %38 = arith.cmpi ult, %33, %34 : index
-  cf.cond_br %38, ^bb17, ^bb18
-^bb17:  // pred: ^bb16
-  %39 = memref.load %arg3[%37] : memref<?xindex>
-  %40 = arith.cmpi eq, %39, %arg7 : index
-  cf.br ^bb19(%40 : i1)
-^bb18:  // pred: ^bb16
-  memref.store %36, %30[%9] : memref<?xindex>
-  cf.br ^bb19(%false : i1)
-^bb19(%41: i1):  // 2 preds: ^bb17, ^bb18
-  cf.br ^bb20
-^bb20:  // pred: ^bb19
-  %42 = arith.select %41, %37, %36 : index
-  cf.cond_br %41, ^bb21, ^bb22
-^bb21:  // pred: ^bb20
-  cf.br ^bb36(%arg3, %arg4, %31 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
-^bb22:  // pred: ^bb20
-  %43 = arith.addi %36, %c1 : index
-  memref.store %43, %30[%32] : memref<?xindex>
-  %44 = llvm.extractvalue %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %45 = arith.index_cast %44 : i64 to index
-  %dim_1 = memref.dim %arg3, %c0 : memref<?xindex>
-  %46 = arith.addi %45, %c1 : index
-  %47 = arith.cmpi ugt, %46, %dim_1 : index
-  cf.cond_br %47, ^bb23, ^bb24
-^bb23:  // pred: ^bb22
-  %48 = arith.muli %dim_1, %c2 : index
-  %49 = memref.realloc %arg3(%48) : memref<?xindex> to memref<?xindex>
-  cf.br ^bb25(%49 : memref<?xindex>)
-^bb24:  // pred: ^bb22
-  cf.br ^bb25(%arg3 : memref<?xindex>)
-^bb25(%50: memref<?xindex>):  // 2 preds: ^bb23, ^bb24
-  cf.br ^bb26
-^bb26:  // pred: ^bb25
-  memref.store %arg7, %50[%45] : memref<?xindex>
-  %51 = arith.index_cast %46 : index to i64
-  %52 = llvm.insertvalue %51, %31[1, 3] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %53 = llvm.extractvalue %31[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  %54 = arith.index_cast %53 : i64 to index
-  %dim_2 = memref.dim %arg4, %c0 : memref<?xf32>
-  %55 = arith.addi %54, %c32 : index
-  %56 = arith.cmpi ugt, %55, %dim_2 : index
-  cf.cond_br %56, ^bb27, ^bb30
-^bb27:  // pred: ^bb26
-  cf.br ^bb28(%dim_2 : index)
-^bb28(%57: index):  // 2 preds: ^bb27, ^bb28
-  %58 = arith.muli %57, %c2 : index
-  %59 = arith.cmpi ugt, %55, %58 : index
-  cf.cond_br %59, ^bb28(%58 : index), ^bb29
-^bb29:  // pred: ^bb28
-  %60 = memref.realloc %arg4(%58) : memref<?xf32> to memref<?xf32>
-  cf.br ^bb31(%60 : memref<?xf32>)
-^bb30:  // pred: ^bb26
-  cf.br ^bb31(%arg4 : memref<?xf32>)
-^bb31(%61: memref<?xf32>):  // 2 preds: ^bb29, ^bb30
-  cf.br ^bb32
-^bb32:  // pred: ^bb31
-  %subview = memref.subview %61[%54] [32] [1] : memref<?xf32> to memref<32xf32, strided<[1], offset: ?>>
-  cf.br ^bb33(%c0 : index)
-^bb33(%62: index):  // 2 preds: ^bb32, ^bb34
-  %63 = arith.cmpi slt, %62, %c32 : index
-  cf.cond_br %63, ^bb34, ^bb35
-^bb34:  // pred: ^bb33
-  memref.store %cst, %subview[%62] : memref<32xf32, strided<[1], offset: ?>>
-  %64 = arith.addi %62, %c1 : index
-  cf.br ^bb33(%64 : index)
-^bb35:  // pred: ^bb33
-  %65 = arith.index_cast %55 : index to i64
-  %66 = llvm.insertvalue %65, %52[1, 4] : !llvm.struct<(array<3 x i64>, array<5 x i64>)> 
-  cf.br ^bb36(%50, %61, %66 : memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>)
-^bb36(%67: memref<?xindex>, %68: memref<?xf32>, %69: !llvm.struct<(array<3 x i64>, array<5 x i64>)>):  // 2 preds: ^bb21, ^bb35
-  cf.br ^bb37
-^bb37:  // pred: ^bb36
-  %70 = arith.muli %42, %c32 : index
-  %71 = arith.addi %70, %arg8 : index
-  memref.store %arg9, %68[%71] : memref<?xf32>
-  return %arg0, %29, %30, %67, %68, %69 : memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xindex>, memref<?xf32>, !llvm.struct<(array<3 x i64>, array<5 x i64>)>
-}
-
-// -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
-func.func private @_sparse_heap_sort_1_index(%arg0: index, %arg1: index, %arg2: memref<?xindex>) {
-  %c0 = arith.constant 0 : index
-  %c1 = arith.constant 1 : index
-  %c2 = arith.constant 2 : index
-  %0 = arith.subi %arg1, %arg0 : index
-  %1 = arith.subi %0, %c2 : index
-  %2 = arith.shrui %1, %c1 : index
-  %3 = arith.addi %2, %c1 : index
-  cf.br ^bb1(%c0 : index)
-^bb1(%4: index):  // 2 preds: ^bb0, ^bb2
-  %5 = arith.cmpi slt, %4, %3 : index
-  cf.cond_br %5, ^bb2, ^bb3
-^bb2:  // pred: ^bb1
-  %6 = arith.subi %2, %4 : index
-  %7 = arith.addi %arg0, %6 : index
-  call @_sparse_shift_down_1_index(%arg0, %7, %arg2, %0) : (index, index, memref<?xindex>, index) -> ()
-  %8 = arith.addi %4, %c1 : index
-  cf.br ^bb1(%8 : index)
-^bb3:  // pred: ^bb1
-  %9 = arith.subi %0, %c1 : index
-  cf.br ^bb4(%c0 : index)
-^bb4(%10: index):  // 2 preds: ^bb3, ^bb5
-  %11 = arith.cmpi slt, %10, %9 : index
-  cf.cond_br %11, ^bb5, ^bb6
-^bb5:  // pred: ^bb4
-  %12 = arith.subi %0, %10 : index
-  %13 = arith.addi %arg0, %12 : index
-  %14 = arith.subi %13, %c1 : index
-  %15 = memref.load %arg2[%arg0] : memref<?xindex>
-  %16 = memref.load %arg2[%14] : memref<?xindex>
-  memref.store %16, %arg2[%arg0] : memref<?xindex>
-  memref.store %15, %arg2[%14] : memref<?xindex>
-  %17 = arith.subi %12, %c1 : index
-  call @_sparse_shift_down_1_index(%arg0, %arg0, %arg2, %17) : (index, index, memref<?xindex>, index) -> ()
-  %18 = arith.addi %10, %c1 : index
-  cf.br ^bb4(%18 : index)
-^bb6:  // pred: ^bb4
-  return
 }
 
 // -----// IR Dump After SCFToControlFlow (convert-scf-to-cf) //----- //
