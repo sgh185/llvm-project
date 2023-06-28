@@ -167,7 +167,7 @@ ProcessProperties::ProcessProperties(lldb_private::Process *process)
         std::make_shared<ProcessOptionValueProperties>(ConstString("process"));
     m_collection_sp->Initialize(g_process_properties);
     m_collection_sp->AppendProperty(
-        ConstString("thread"), "Settings specific to threads.", true,
+        "thread", "Settings specific to threads.", true,
         Thread::GetGlobalProperties().GetValueProperties());
   } else {
     m_collection_sp =
@@ -180,7 +180,7 @@ ProcessProperties::ProcessProperties(lldb_private::Process *process)
   m_experimental_properties_up =
       std::make_unique<ProcessExperimentalProperties>();
   m_collection_sp->AppendProperty(
-      ConstString(Properties::GetExperimentalSettingsName()),
+      Properties::GetExperimentalSettingsName(),
       "Experimental settings - setting these won't produce "
       "errors if the setting is not present.",
       true, m_experimental_properties_up->GetValueProperties());
@@ -6007,7 +6007,7 @@ Status Process::GetMemoryRegions(lldb_private::MemoryRegionInfos &region_list) {
 }
 
 Status
-Process::ConfigureStructuredData(ConstString type_name,
+Process::ConfigureStructuredData(llvm::StringRef type_name,
                                  const StructuredData::ObjectSP &config_sp) {
   // If you get this, the Process-derived class needs to implement a method to
   // enable an already-reported asynchronous structured data feature. See
@@ -6070,7 +6070,7 @@ void Process::MapSupportedStructuredDataPlugins(
     // For any of the remaining type names, map any that this plugin supports.
     std::vector<llvm::StringRef> names_to_remove;
     for (llvm::StringRef type_name : type_names) {
-      if (plugin_sp->SupportsStructuredDataType(ConstString(type_name))) {
+      if (plugin_sp->SupportsStructuredDataType(type_name)) {
         m_structured_data_plugin_map.insert(
             std::make_pair(type_name, plugin_sp));
         names_to_remove.push_back(type_name);
@@ -6110,8 +6110,7 @@ bool Process::RouteAsyncStructuredData(
   }
 
   // Route the structured data to the plugin.
-  find_it->second->HandleArrivalOfStructuredData(*this, ConstString(type_name),
-                                                 object_sp);
+  find_it->second->HandleArrivalOfStructuredData(*this, type_name, object_sp);
   return true;
 }
 

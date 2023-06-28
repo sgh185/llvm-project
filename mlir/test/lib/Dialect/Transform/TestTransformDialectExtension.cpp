@@ -831,6 +831,75 @@ void mlir::test::ApplyTestPatternsOp::populatePatterns(
   patterns.insert<ReplaceWithNewOp, EraseOp>(patterns.getContext());
 }
 
+void mlir::test::TestReEnterRegionOp::getEffects(
+    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
+  transform::consumesHandle(getOperands(), effects);
+  transform::modifiesPayload(effects);
+}
+
+DiagnosedSilenceableFailure
+mlir::test::TestReEnterRegionOp::apply(transform::TransformRewriter &rewriter,
+                                       transform::TransformResults &results,
+                                       transform::TransformState &state) {
+
+  SmallVector<SmallVector<transform::MappedValue>> mappings;
+  for (BlockArgument arg : getBody().front().getArguments()) {
+    mappings.emplace_back(llvm::to_vector(llvm::map_range(
+        state.getPayloadOps(getOperand(arg.getArgNumber())),
+        [](Operation *op) -> transform::MappedValue { return op; })));
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    auto scope = state.make_region_scope(getBody());
+    for (BlockArgument arg : getBody().front().getArguments()) {
+      if (failed(state.mapBlockArgument(arg, mappings[arg.getArgNumber()])))
+        return DiagnosedSilenceableFailure::definiteFailure();
+    }
+    for (Operation &op : getBody().front().without_terminator()) {
+      DiagnosedSilenceableFailure diag =
+          state.applyTransform(cast<transform::TransformOpInterface>(op));
+      if (!diag.succeeded())
+        return diag;
+    }
+  }
+  return DiagnosedSilenceableFailure::success();
+}
+
+LogicalResult mlir::test::TestReEnterRegionOp::verify() {
+  if (getNumOperands() != getBody().front().getNumArguments()) {
+    return emitOpError() << "expects as many operands as block arguments";
+  }
+  return success();
+}
+
+DiagnosedSilenceableFailure mlir::test::TestNotifyPayloadOpReplacedOp::apply(
+    transform::TransformRewriter &rewriter,
+    transform::TransformResults &results, transform::TransformState &state) {
+  auto originalOps = state.getPayloadOps(getOriginal());
+  auto replacementOps = state.getPayloadOps(getReplacement());
+  if (llvm::range_size(originalOps) != llvm::range_size(replacementOps))
+    return emitSilenceableError() << "expected same number of original and "
+                                     "replacement payload operations";
+  for (const auto &[original, replacement] :
+       llvm::zip(originalOps, replacementOps)) {
+    if (failed(
+            rewriter.notifyPayloadOperationReplaced(original, replacement))) {
+      auto diag = emitSilenceableError()
+                  << "unable to replace payload op in transform mapping";
+      diag.attachNote(original->getLoc()) << "original payload op";
+      diag.attachNote(replacement->getLoc()) << "replacement payload op";
+      return diag;
+    }
+  }
+  return DiagnosedSilenceableFailure::success();
+}
+
+void mlir::test::TestNotifyPayloadOpReplacedOp::getEffects(
+    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
+  transform::onlyReadsHandle(getOriginal(), effects);
+  transform::onlyReadsHandle(getReplacement(), effects);
+}
+
 namespace {
 /// Test extension of the Transform dialect. Registers additional ops and
 /// declares PDL as dependent dialect since the additional ops are using PDL

@@ -3,21 +3,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// FIXME: Hangs.
-// UNSUPPORTED: tsan
-
 // https://github.com/google/sanitizers/issues/981
 // UNSUPPORTED: android-26
 
-// FIXME: Make it work. Don't xfail to avoid excessive memory usage.
-// UNSUPPORTED: msan, hwasan
+// FIXME: Hangs.
+// UNSUPPORTED: tsan
+
+// Hwasan requires tagging of new allocations, so needs RSS for shadow.
+// UNSUPPORTED: hwasan
+
+// FIXME: Something wrong with MADV_FREE or MAP_NORESERVE there.
+// UNSUPPORTED: solaris
 
 void *p;
 
 int main(int argc, char **argv) {
   for (int i = 0; i < sizeof(void *) * 8; ++i) {
-    p = malloc(1ull << i);
-    fprintf(stderr, "%llu: %p\n", (1ull << i), p);
+    // Calloc avoids MSAN shadow poisoning.
+    p = calloc(1ull << i, 1);
+    fprintf(stderr, "%d %llu: %p\n", i, (1ull << i), p);
     free(p);
   }
   return 0;

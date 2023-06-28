@@ -63,6 +63,8 @@ Changes to the LLVM IR
 
 * Introduced new ``llvm.ldexp`` and ``llvm.experimental.constrained.ldexp`` intrinsics.
 
+* Introduced new ``llvm.frexp`` intrinsic.
+
 * The constant expression variants of the following instructions have been
   removed:
 
@@ -143,6 +145,8 @@ Changes to the AMDGPU Backend
 * Added llvm.amdgcn.exp2.f32 intrinsic. This provides direct access to
   v_exp_f32.
 
+* llvm.log2.f32 is now lowered accurately. Use llvm.amdgcn.log.f32 to
+  access the old behavior.
 
 Changes to the ARM Backend
 --------------------------
@@ -171,6 +175,8 @@ Changes to the LoongArch Backend
 --------------------------------
 
 * The ``lp64s`` ABI is supported now and has been tested on Rust bare-matal target.
+* A target feature ``ual`` is introduced to allow unaligned memory accesses and
+  this feature is enabled by default for generic 64-bit processors.
 
 Changes to the MIPS Backend
 ---------------------------
@@ -205,6 +211,8 @@ Changes to the RISC-V Backend
 * Added support for the vendor-defined XTHeadMemIdx (indexed memory operations)
   extension disassembler/assembler.
 * Added support for the vendor-defined Xsfvcp (SiFive VCIX) extension
+  disassembler/assembler.
+* Added support for the vendor-defined Xsfcie (SiFive CIE) extension
   disassembler/assembler.
 * Support for the now-ratified Zawrs extension is no longer experimental.
 * Adds support for the vendor-defined XTHeadCmo (cache management operations) extension.

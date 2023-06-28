@@ -10,6 +10,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/CodeGen/NonRelocatableStringpool.h"
 #include "llvm/DWARFLinker/DWARFLinkerDeclContext.h"
 #include "llvm/DWARFLinker/DWARFStreamer.h"
@@ -191,7 +192,8 @@ bool DWARFLinker::DIECloner::getDIENames(const DWARFDie &Die,
   if (!Info.MangledName)
     Info.MangledName = Info.Name;
 
-  if (StripTemplate && Info.Name && Info.MangledName != Info.Name) {
+  if (StripTemplate && Linker.Options.CanStripTemplateName && Info.Name &&
+      Info.MangledName != Info.Name) {
     StringRef Name = Info.Name.getString();
     if (std::optional<StringRef> StrippedName = StripTemplateParameters(Name))
       Info.NameWithoutTemplate = StringPool.getEntry(*StrippedName);

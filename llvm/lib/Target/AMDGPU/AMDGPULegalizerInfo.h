@@ -78,6 +78,7 @@ public:
 
   bool legalizeAtomicCmpXChg(MachineInstr &MI, MachineRegisterInfo &MRI,
                              MachineIRBuilder &B) const;
+  bool legalizeFlog2(MachineInstr &MI, MachineIRBuilder &B) const;
   bool legalizeFlog(MachineInstr &MI, MachineIRBuilder &B,
                     double Log2BaseInverted) const;
   bool legalizeFExp(MachineInstr &MI, MachineIRBuilder &B) const;
@@ -138,6 +139,8 @@ public:
   bool legalizeFDIV32(MachineInstr &MI, MachineRegisterInfo &MRI,
                       MachineIRBuilder &B) const;
   bool legalizeFDIV64(MachineInstr &MI, MachineRegisterInfo &MRI,
+                      MachineIRBuilder &B) const;
+  bool legalizeFFREXP(MachineInstr &MI, MachineRegisterInfo &MRI,
                       MachineIRBuilder &B) const;
   bool legalizeFastUnsafeFDIV(MachineInstr &MI, MachineRegisterInfo &MRI,
                               MachineIRBuilder &B) const;

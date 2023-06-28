@@ -160,8 +160,8 @@ public:
   /// the state of a program.
   explicit Environment(DataflowAnalysisContext &DACtx);
 
-  Environment(const Environment &Other);
-  Environment &operator=(const Environment &Other);
+  // Copy-constructor is private, Environments should not be copied. See fork().
+  Environment &operator=(const Environment &Other) = delete;
 
   Environment(Environment &&Other) = default;
   Environment &operator=(Environment &&Other) = default;
@@ -175,6 +175,16 @@ public:
   /// If `DeclCtx` is a non-static member function, initializes the environment
   /// with a symbolic representation of the `this` pointee.
   Environment(DataflowAnalysisContext &DACtx, const DeclContext &DeclCtx);
+
+  /// Returns a new environment that is a copy of this one.
+  ///
+  /// The state of the program is initially the same, but can be mutated without
+  /// affecting the original.
+  ///
+  /// However the original should not be further mutated, as this may interfere
+  /// with the fork. (In practice, values are stored independently, but the
+  /// forked flow condition references the original).
+  Environment fork() const;
 
   /// Creates and returns an environment to use for an inline analysis  of the
   /// callee. Uses the storage location from each argument in the `Call` as the
@@ -208,17 +218,15 @@ public:
   bool equivalentTo(const Environment &Other,
                     Environment::ValueModel &Model) const;
 
-  /// Joins the environment with `Other` by taking the intersection of storage
-  /// locations and values that are stored in them. Distinct values that are
-  /// assigned to the same storage locations in the environment and `Other` are
-  /// merged using `Model`.
+  /// Joins two environments by taking the intersection of storage locations and
+  /// values that are stored in them. Distinct values that are assigned to the
+  /// same storage locations in `EnvA` and `EnvB` are merged using `Model`.
   ///
   /// Requirements:
   ///
-  ///  `Other` and `this` must use the same `DataflowAnalysisContext`.
-  LatticeJoinEffect join(const Environment &Other,
-                         Environment::ValueModel &Model);
-
+  ///  `EnvA` and `EnvB` must use the same `DataflowAnalysisContext`.
+  static Environment join(const Environment &EnvA, const Environment &EnvB,
+                          Environment::ValueModel &Model);
 
   /// Widens the environment point-wise, using `PrevEnv` as needed to inform the
   /// approximation.
@@ -387,6 +395,9 @@ public:
   /// Assigns `Val` as the value of `Loc` in the environment.
   void setValue(const StorageLocation &Loc, Value &Val);
 
+  /// Clears any association between `Loc` and a value in the environment.
+  void clearValue(const StorageLocation &Loc);
+
   /// Assigns `Val` as the value of the prvalue `E` in the environment.
   ///
   /// If `E` is not yet associated with a storage location, associates it with
@@ -540,6 +551,9 @@ public:
   LLVM_DUMP_METHOD void dump(raw_ostream &OS) const;
 
 private:
+  // The copy-constructor is for use in fork() only.
+  Environment(const Environment &) = default;
+
   /// Creates a value appropriate for `Type`, if `Type` is supported, otherwise
   /// return null.
   ///

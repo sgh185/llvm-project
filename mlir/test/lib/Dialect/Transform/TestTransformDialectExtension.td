@@ -553,4 +553,26 @@ def ApplyTestPatternsOp
   let cppNamespace = "::mlir::test";
 }
 
+def TestReEnterRegionOp
+  : Op<Transform_Dialect, "test_re_enter_region",
+       [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+        DeclareOpInterfaceMethods<TransformOpInterface>]> {
+  let arguments = (ins Variadic<AnyType>:$args);
+  let regions = (region SizedRegion<1>:$body);
+  let assemblyFormat = "($args^ `:` type($args))? attr-dict-with-keyword regions";
+  let cppNamespace = "::mlir::test";
+  let hasVerifier = 1;
+}
+
+def TestNotifyPayloadOpReplacedOp
+  : Op<Transform_Dialect, "test_notify_payload_op_replaced",
+       [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+        DeclareOpInterfaceMethods<TransformOpInterface>]> {
+  let arguments = (ins TransformHandleTypeInterface:$original,
+                       TransformHandleTypeInterface:$replacement);
+  let results = (outs);
+  let assemblyFormat = "$original `,` $replacement attr-dict `:` functional-type(operands, results)";
+  let cppNamespace = "::mlir::test";
+}
+
 #endif // MLIR_TESTTRANSFORMDIALECTEXTENSION_TD
