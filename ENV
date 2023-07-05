@@ -5,4 +5,6 @@ export PYTHON3_PATH=`which python3`
 export PATH=${MLIR_LLVM_DIR}/build/bin:$PATH
 export PYTHONPATH=${MLIR_LLVM_DIR}/build/tools/mlir/python_packages/mlir_core
 export SUPPORTLIB=${MLIR_LLVM_DIR}/build/lib/libmlir_c_runner_utils.so
-export TACO=${MLIR_LLVM_DIR}/mlir/test/Integration/Dialect/SparseTensor/taco
+export RUNNERLIB=${MLIR_LLVM_DIR}/build/lib/libmlir_runner_utils.so
+export TACO=${PWD}/mlir/test/Integration/Dialect/SparseTensor/taco
+export FORCEMAIN=1
