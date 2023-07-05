@@ -1486,9 +1486,13 @@ void mlir::populatePreSparsificationRewriting(RewritePatternSet &patterns) {
 }
 
 void mlir::populatePostSparsificationRewriting(RewritePatternSet &patterns,
+                                               bool enableSTPrints,
                                                bool enableRT,
                                                bool enableForeach,
                                                bool enableConvert) {
+  // HACK -> Set printing flag
+  sparse_tensor::printSparseTensor = enableSTPrints;
+
   patterns.add<ReshapeRewriter<tensor::ExpandShapeOp>,
                ReshapeRewriter<tensor::CollapseShapeOp>, TensorReshapeRewriter>(
       patterns.getContext());

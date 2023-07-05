@@ -73,6 +73,11 @@ struct SparseCompilerOptions
       desc("Enable runtime library for manipulating sparse tensors"),
       init(true)};
 
+  PassOptions::Option<bool> enableSTPrints{
+      *this, "enable-st-prints",
+      desc("Enable runtime library calls to print sparse tensor components"),
+      init(false)};
+
   PassOptions::Option<bool> testBufferizationAnalysisOnly{
       *this, "test-bufferization-analysis-only",
       desc("Run only the inplacability analysis"), init(false)};

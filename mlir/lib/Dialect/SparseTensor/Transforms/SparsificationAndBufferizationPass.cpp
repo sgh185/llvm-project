@@ -59,7 +59,7 @@ public:
       const SparseTensorConversionOptions &sparseTensorConversionOptions,
       bool createSparseDeallocs, bool enableRuntimeLibrary,
       bool enableBufferInitialization, unsigned vectorLength,
-      bool enableVLAVectorization, bool enableSIMDIndex32)
+      bool enableVLAVectorization, bool enableSIMDIndex32, bool enableSTPrints)
       : bufferizationOptions(bufferizationOptions),
         sparsificationOptions(sparsificationOptions),
         sparseTensorConversionOptions(sparseTensorConversionOptions),
@@ -68,7 +68,8 @@ public:
         enableBufferInitialization(enableBufferInitialization),
         vectorLength(vectorLength),
         enableVLAVectorization(enableVLAVectorization),
-        enableSIMDIndex32(enableSIMDIndex32) {}
+        enableSIMDIndex32(enableSIMDIndex32),
+        enableSTPrints(enableSTPrints) {}
 
   /// Bufferize all dense ops. This assumes that no further analysis is needed
   /// and that all required buffer copies were already inserted by
@@ -140,7 +141,7 @@ public:
     {
       OpPassManager pm("builtin.module");
       pm.addPass(createSparsificationPass(sparsificationOptions));
-      pm.addPass(createPostSparsificationRewritePass(enableRuntimeLibrary));
+      pm.addPass(createPostSparsificationRewritePass(enableSTPrints, enableRuntimeLibrary));
       if (vectorLength > 0) {
         pm.addPass(mlir::createLoopInvariantCodeMotionPass());
         pm.addPass(createSparseVectorizationPass(
@@ -174,6 +175,7 @@ private:
   unsigned vectorLength;
   bool enableVLAVectorization;
   bool enableSIMDIndex32;
+  bool enableSTPrints;
 };
 
 } // namespace sparse_tensor
@@ -185,11 +187,12 @@ std::unique_ptr<Pass> mlir::createSparsificationAndBufferizationPass(
     const SparseTensorConversionOptions &sparseTensorConversionOptions,
     bool createSparseDeallocs, bool enableRuntimeLibrary,
     bool enableBufferInitialization, unsigned vectorLength,
-    bool enableVLAVectorization, bool enableSIMDIndex32) {
+    bool enableVLAVectorization, bool enableSIMDIndex32,
+    bool enableSTPrints) {
   return std::make_unique<
       mlir::sparse_tensor::SparsificationAndBufferizationPass>(
       bufferizationOptions, sparsificationOptions,
       sparseTensorConversionOptions, createSparseDeallocs, enableRuntimeLibrary,
       enableBufferInitialization, vectorLength, enableVLAVectorization,
-      enableSIMDIndex32);
+      enableSIMDIndex32, enableSTPrints);
 }

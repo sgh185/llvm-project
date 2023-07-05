@@ -15,6 +15,7 @@
 
 #include "mlir/ExecutionEngine/RunnerUtils.h"
 #include <chrono>
+#include <string>
 
 // NOLINTBEGIN(*-identifier-naming)
 
@@ -138,6 +139,31 @@ extern "C" void printMemrefF32(int64_t rank, void *ptr) {
 extern "C" void printMemrefF64(int64_t rank, void *ptr) {
   UnrankedMemRefType<double> descriptor = {rank, ptr};
   _mlir_ciface_printMemrefF64(&descriptor);
+}
+
+/*
+ * HACK
+ */
+extern "C" void printSTComponent(int64_t st_component, int64_t level, int64_t tid) {
+  std::string tid_str = "";
+  if (tid < 0) tid_str = "unknown";
+  else tid_str = std::to_string(tid);
+
+  switch (st_component) {
+  case 0:
+    printf("positions [lvl = %ld] [tensor id = %s]\n", level, tid_str.c_str());
+    break;
+  case 1:
+    printf("coordinates [lvl = %ld] [tensor id = %s]\n", level, tid_str.c_str());
+    break;
+  case 2:
+    printf("values [lvl = %ld] [tensor id = %s]\n", level, tid_str.c_str());
+    break;
+  case 3:
+    printf("dense [lvl = %ld] [tensor id = %s]\n", level, tid_str.c_str());
+    break;
+  }
+  return;
 }
 
 // Assume index_type is in fact uint64_t.

@@ -308,6 +308,9 @@ Value reshapeValuesToLevels(OpBuilder &builder, Location loc,
                             SparseTensorEncodingAttr enc, ValueRange dimSizes,
                             Value valuesBuffer, Value lvlCoords);
 
+/// Hack -> Global to set printing for sparse tensors
+extern bool printSparseTensor;
+
 //===----------------------------------------------------------------------===//
 // Inlined constant generators.
 //
@@ -420,21 +423,33 @@ inline bool isZeroRankedTensorOrScalar(Type type) {
   return !rtp || rtp.getRank() == 0;
 }
 
+/// Generates MLIR runtime calls to print memref values 
+/// that represent (dense and sparse) tensor values
+void createMemRefDebugPrint(
+  OpBuilder &builder, 
+  Location loc,
+  Type internalTp,
+  Value memRefOp,
+  Level lvl,
+  int64_t componentNum,
+  int tid
+);
+
 /// Infers the result type and generates `ToPositionsOp`.
-Value genToPositions(OpBuilder &builder, Location loc, Value tensor, Level lvl);
+Value genToPositions(OpBuilder &builder, Location loc, Value tensor, Level lvl, int tid=-1);
 
 /// Infers the result type and generates `ToCoordinatesOp`.  If the
 /// level is within a COO region, the result type is a memref with unknown
 /// stride and offset.  Otherwise, the result type is a memref without
 /// any specified layout.
 Value genToCoordinates(OpBuilder &builder, Location loc, Value tensor,
-                       Level lvl, Level cooStart);
+                       Level lvl, Level cooStart, int tid=-1);
 
 /// Infers the result type and generates `ToCoordinatesBufferOp`.
-Value genToCoordinatesBuffer(OpBuilder &builder, Location loc, Value tensor);
+Value genToCoordinatesBuffer(OpBuilder &builder, Location loc, Value tensor, int tid=-1);
 
 /// Infers the result type and generates `ToValuesOp`.
-Value genToValues(OpBuilder &builder, Location loc, Value tensor);
+Value genToValues(OpBuilder &builder, Location loc, Value tensor, int tid=-1);
 
 /// Generates code to retrieve the values size for the sparse tensor.
 Value genValMemSize(OpBuilder &builder, Location loc, Value tensor);

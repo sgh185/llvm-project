@@ -415,13 +415,13 @@ void LoopEmitter::initializeLoopEmit(
       // Handle sparse storage schemes.
       if (isCompressedDLT(lvlTp) || isCompressedWithHiDLT(lvlTp)) {
         // Generate sparse primitives to obtain positions and coordinates.
-        positionsBuffers[t][l] = genToPositions(builder, loc, tensor, l);
+        positionsBuffers[t][l] = genToPositions(builder, loc, tensor, l, t);
         coordinatesBuffers[t][l] =
-            genToCoordinates(builder, loc, tensor, l, cooStart);
+            genToCoordinates(builder, loc, tensor, l, cooStart, t);
       } else if (isSingletonDLT(lvlTp)) {
         // Singleton level, fetch coordinates.
         coordinatesBuffers[t][l] =
-            genToCoordinates(builder, loc, tensor, l, cooStart);
+            genToCoordinates(builder, loc, tensor, l, cooStart, t);
       } else {
         // Dense level, nothing to fetch.
         assert(isDenseDLT(lvlTp));
@@ -463,10 +463,17 @@ void LoopEmitter::initializeLoopEmit(
         denseVal = updater(builder, loc, denseVal, tensor);
 
       valBuffer[t] = denseVal;
+
+      /*
+       * Add debugging support -> print dense tensor (flattened)
+       */
+      sparse_tensor::createMemRefDebugPrint(builder, loc, elementType, denseVal, 
+                                            /*level=0 (none)*/ 0, /*component=3 (dense)*/ 3, t);
+
     } else {
       // Annotated sparse tensors.
       // We also need the value buffer for all-dense annotated "sparse" tensors.
-      valBuffer[t] = genToValues(builder, loc, tensor);
+      valBuffer[t] = genToValues(builder, loc, tensor, t);
     }
     // NOTE: we can also prepare for 0 lvl here in advance, this will hoist
     // some loop preparation from tensor iteration, but will also (undesirably)

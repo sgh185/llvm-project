@@ -158,13 +158,13 @@ std::unique_ptr<Pass> createPreSparsificationRewritePass();
 //===----------------------------------------------------------------------===//
 
 void populatePostSparsificationRewriting(RewritePatternSet &patterns,
-                                         bool enableRT, bool enableForeach,
-                                         bool enableConvert);
+                                         bool enableSTPrints, bool enableRT, 
+                                         bool enableForeach, bool enableConvert);
 
 std::unique_ptr<Pass> createPostSparsificationRewritePass();
 std::unique_ptr<Pass>
-createPostSparsificationRewritePass(bool enableRT, bool enableForeach = true,
-                                    bool enableConvert = true);
+createPostSparsificationRewritePass(bool enableSTP, bool enableRT, 
+                                    bool enableForeach = true, bool enableConvert = true);
 
 //===----------------------------------------------------------------------===//
 // The SparseStorageSpecifierToLLVM pass.
@@ -189,7 +189,8 @@ std::unique_ptr<Pass> createSparsificationAndBufferizationPass(
     const SparseTensorConversionOptions &sparseTensorConversionOptions,
     bool createSparseDeallocs, bool enableRuntimeLibrary,
     bool enableBufferInitialization, unsigned vectorLength,
-    bool enableVLAVectorization, bool enableSIMDIndex32);
+    bool enableVLAVectorization, bool enableSIMDIndex32,
+    bool enableSTPrints);
 
 void populateSparseBufferRewriting(RewritePatternSet &patterns,
                                    bool enableBufferInitialization);

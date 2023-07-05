@@ -93,7 +93,8 @@ struct PostSparsificationRewritePass
   PostSparsificationRewritePass() = default;
   PostSparsificationRewritePass(const PostSparsificationRewritePass &pass) =
       default;
-  PostSparsificationRewritePass(bool enableRT, bool foreach, bool convert) {
+  PostSparsificationRewritePass(bool enableSTP, bool enableRT, bool foreach, bool convert) {
+    enableSTPrints = enableSTP;
     enableRuntimeLibrary = enableRT;
     enableForeach = foreach;
     enableConvert = convert;
@@ -102,7 +103,7 @@ struct PostSparsificationRewritePass
   void runOnOperation() override {
     auto *ctx = &getContext();
     RewritePatternSet patterns(ctx);
-    populatePostSparsificationRewriting(patterns, enableRuntimeLibrary,
+    populatePostSparsificationRewriting(patterns, enableSTPrints, enableRuntimeLibrary,
                                         enableForeach, enableConvert);
     (void)applyPatternsAndFoldGreedily(getOperation(), std::move(patterns));
   }
@@ -382,10 +383,10 @@ std::unique_ptr<Pass> mlir::createPostSparsificationRewritePass() {
 }
 
 std::unique_ptr<Pass>
-mlir::createPostSparsificationRewritePass(bool enableRT, bool enableForeach,
-                                          bool enableConvert) {
+mlir::createPostSparsificationRewritePass(bool enableSTPrints, bool enableRT,
+                                          bool enableForeach, bool enableConvert) {
   return std::make_unique<PostSparsificationRewritePass>(
-      enableRT, enableForeach, enableConvert);
+      enableSTPrints, enableRT, enableForeach, enableConvert);
 }
 
 std::unique_ptr<Pass> mlir::createSparseTensorConversionPass() {
