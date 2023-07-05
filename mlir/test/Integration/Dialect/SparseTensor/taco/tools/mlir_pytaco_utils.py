@@ -23,6 +23,12 @@ _SupportFunc = Callable[..., None]
 _SupportFuncLocator = Callable[[np.dtype], Tuple[_SupportFunc, _SupportFunc]]
 
 # The name for the environment variable that provides the full path for the
+# general MLIR runner library.
+_RUNNER_ENV_VAR = "RUNNERLIB"
+# The default supporting runner library if the environment variable is not provided.
+_DEFAULT_RUNNER = "libmlir_runner_utils.so"
+
+# The name for the environment variable that provides the full path for the
 # supporting library.
 _SUPPORTLIB_ENV_VAR = "SUPPORTLIB"
 # The default supporting library if the environment variable is not provided.
@@ -33,6 +39,10 @@ _OPT_LEVEL = 2
 # The entry point to the JIT compiled program.
 _ENTRY_NAME = "main"
 
+@functools.lru_cache()
+def _get_gen_runner_support_lib_name() -> str:
+    """Gets the string name for the generic supporting MLIR runner library."""
+    return os.getenv(_RUNNER_ENV_VAR, _DEFAULT_RUNNER)
 
 @functools.lru_cache()
 def _get_support_lib_name() -> str:
@@ -44,7 +54,7 @@ def _get_support_lib_name() -> str:
 def _get_sparse_compiler() -> mlir_sparse_compiler.SparseCompiler:
     """Gets the MLIR sparse compiler with default setting."""
     return mlir_sparse_compiler.SparseCompiler(
-        options="", opt_level=_OPT_LEVEL, shared_libs=[_get_support_lib_name()]
+        options="", opt_level=_OPT_LEVEL, shared_libs=[_get_support_lib_name(), _get_gen_runner_support_lib_name()]
     )
 
 
