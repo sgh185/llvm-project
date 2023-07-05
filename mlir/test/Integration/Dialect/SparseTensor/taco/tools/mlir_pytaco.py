@@ -722,8 +722,8 @@ class IndexExpr(abc.ABC):
 
         # Build the kernel for the operations.
         with ir.InsertionPoint(module.body):
-
-            @func.FuncOp.from_py_func(*input_types, name=f'{prefix}.{_ENTRY_NAME}')
+            fname = _ENTRY_NAME if int(os.environ['FORCEMAIN']) else f"{prefix}.{_ENTRY_NAME}"
+            @func.FuncOp.from_py_func(*input_types, name=fname)
             def linalg_funcop(*args):
                 # Set up the mapping from the Access nodes to their MLIR values.
                 for e, mlir in zip(input_accesses, args):
