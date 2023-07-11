@@ -308,8 +308,8 @@ Value reshapeValuesToLevels(OpBuilder &builder, Location loc,
                             SparseTensorEncodingAttr enc, ValueRange dimSizes,
                             Value valuesBuffer, Value lvlCoords);
 
-/// Hack -> Global to set printing for sparse tensors
-extern bool printSparseTensor;
+/// Hack -> Global to set printing for input tensors
+extern bool printInputTensor;
 
 //===----------------------------------------------------------------------===//
 // Inlined constant generators.
@@ -428,11 +428,11 @@ inline bool isZeroRankedTensorOrScalar(Type type) {
 void createMemRefDebugPrint(
   OpBuilder &builder, 
   Location loc,
+  Value tensor,
   Type internalTp,
   Value memRefOp,
   Level lvl,
-  int64_t componentNum,
-  int tid
+  int64_t componentNum
 );
 
 /// Infers the result type and generates `ToPositionsOp`.

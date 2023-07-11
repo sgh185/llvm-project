@@ -59,7 +59,7 @@ public:
       const SparseTensorConversionOptions &sparseTensorConversionOptions,
       bool createSparseDeallocs, bool enableRuntimeLibrary,
       bool enableBufferInitialization, unsigned vectorLength,
-      bool enableVLAVectorization, bool enableSIMDIndex32, bool enableSTPrints)
+      bool enableVLAVectorization, bool enableSIMDIndex32, bool enableITPrints)
       : bufferizationOptions(bufferizationOptions),
         sparsificationOptions(sparsificationOptions),
         sparseTensorConversionOptions(sparseTensorConversionOptions),
@@ -69,7 +69,7 @@ public:
         vectorLength(vectorLength),
         enableVLAVectorization(enableVLAVectorization),
         enableSIMDIndex32(enableSIMDIndex32),
-        enableSTPrints(enableSTPrints) {}
+        enableITPrints(enableITPrints) {}
 
   /// Bufferize all dense ops. This assumes that no further analysis is needed
   /// and that all required buffer copies were already inserted by
@@ -141,7 +141,7 @@ public:
     {
       OpPassManager pm("builtin.module");
       pm.addPass(createSparsificationPass(sparsificationOptions));
-      pm.addPass(createPostSparsificationRewritePass(enableSTPrints, enableRuntimeLibrary));
+      pm.addPass(createPostSparsificationRewritePass(enableITPrints, enableRuntimeLibrary));
       if (vectorLength > 0) {
         pm.addPass(mlir::createLoopInvariantCodeMotionPass());
         pm.addPass(createSparseVectorizationPass(
@@ -175,7 +175,7 @@ private:
   unsigned vectorLength;
   bool enableVLAVectorization;
   bool enableSIMDIndex32;
-  bool enableSTPrints;
+  bool enableITPrints;
 };
 
 } // namespace sparse_tensor
@@ -188,11 +188,11 @@ std::unique_ptr<Pass> mlir::createSparsificationAndBufferizationPass(
     bool createSparseDeallocs, bool enableRuntimeLibrary,
     bool enableBufferInitialization, unsigned vectorLength,
     bool enableVLAVectorization, bool enableSIMDIndex32,
-    bool enableSTPrints) {
+    bool enableITPrints) {
   return std::make_unique<
       mlir::sparse_tensor::SparsificationAndBufferizationPass>(
       bufferizationOptions, sparsificationOptions,
       sparseTensorConversionOptions, createSparseDeallocs, enableRuntimeLibrary,
       enableBufferInitialization, vectorLength, enableVLAVectorization,
-      enableSIMDIndex32, enableSTPrints);
+      enableSIMDIndex32, enableITPrints);
 }

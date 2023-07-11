@@ -26,7 +26,7 @@ using namespace mlir;
 using namespace mlir::sparse_tensor;
 
 /// (HACK) Set the global variable for printing sparse tensors
-bool sparse_tensor::printSparseTensor = false;
+bool sparse_tensor::printInputTensor = false;
 
 /// If the tensor is a sparse constant, generates and returns the pair of
 /// the constants for the coordinates and the values.
@@ -669,11 +669,11 @@ Value sparse_tensor::reshapeValuesToLevels(OpBuilder &builder, Location loc,
 void sparse_tensor::createMemRefDebugPrint(
   OpBuilder &builder, 
   Location loc,
+  Value tensor,
   Type internalTp,
   Value memRefOp,
   Level lvl,
-  int64_t componentNum,
-  int tid
+  int64_t componentNum
 ) {
   /*
    * TOP
@@ -687,10 +687,35 @@ void sparse_tensor::createMemRefDebugPrint(
    */
 
   /*
-   * Check if sparse tensor prints are enabled
+   * Check if input tensor prints are enabled
    */
-  if (!sparse_tensor::printSparseTensor) return;
-  
+  if (!sparse_tensor::printInputTensor) return;
+
+  /*
+   * Insert calls only for inputs -> check if @tensor
+   * is a function argument to @main or the corresponding
+   * entry point (not implemented). Otherwise, don't print.
+   * 
+   * The reasoning here -> some tensors might be intermediate
+   * tensors that are deallocated via the bufferization process.
+   * We don't print these, since it's possible they are invalid
+   * pointers when printing at runtime.
+   */
+  func::FuncOp func = dyn_cast<func::FuncOp>(builder.getBlock()->getParentOp());
+  if (!func || func.getName() != "main") return; /* only targeting named @main */
+
+  bool tensorIsArg = false;
+  unsigned tid = 0;
+  for (auto arg : func.getArguments()) {
+    if (arg == tensor) {
+      tensorIsArg = true;
+      break;
+    };
+    tid++;
+  }
+
+  if (!tensorIsArg) return;
+
   /*
    * Determine the debug function name from @internalTp
    *
@@ -714,12 +739,13 @@ void sparse_tensor::createMemRefDebugPrint(
 
   /*
    * Dump which sparse tensor component (position=0, coordinates=1,
-   * values=2), level, and tensor ID (if available) we're printing.
+   * values=2) or dense tensor (dense=3), level, and tensor ID
+   * (if available) that we're printing.
    */
-  Value stComponentNum = builder.create<arith::ConstantIntOp>(loc, componentNum, 64);
+  Value inputComponentNum = builder.create<arith::ConstantIntOp>(loc, componentNum, 64);
   Value levelNum = builder.create<arith::ConstantIntOp>(loc, lvl, 64);
-  Value tidNum = builder.create<arith::ConstantIntOp>(loc, tid, 64);
-  createFuncCall(builder, loc, "printSTComponent", {}, {stComponentNum, levelNum, tidNum}, EmitCInterface::Off);
+  Value tidNum = builder.create<arith::ConstantIntOp>(loc, tid, 64); 
+  createFuncCall(builder, loc, "printTensorComponent", {}, {inputComponentNum, levelNum, tidNum}, EmitCInterface::Off);
 
   /*
    * Bulid the memref debug function call, add newline
@@ -736,8 +762,8 @@ Value sparse_tensor::genToPositions(OpBuilder &builder, Location loc,
   const Type memTp = get1DMemRefType(posTp, /*withLayout=*/false);
   Value posOp = builder.create<ToPositionsOp>(loc, memTp, tensor,
                                        builder.getIndexAttr(lvl));
-  sparse_tensor::createMemRefDebugPrint(builder, loc, posTp, posOp, lvl, 
-                                        /*componentNum=0 (positions)*/ 0, tid);
+  sparse_tensor::createMemRefDebugPrint(builder, loc, tensor, posTp, posOp, lvl, 
+                                        /*componentNum=0 (positions)*/ 0);
   return posOp;
 }
 
@@ -748,8 +774,8 @@ Value sparse_tensor::genToCoordinates(OpBuilder &builder, Location loc,
   const Type memTp = get1DMemRefType(crdTp, /*withLayout=*/lvl >= cooStart);
   Value coorOp = builder.create<ToCoordinatesOp>(loc, memTp, tensor,
                                          builder.getIndexAttr(lvl));
-  sparse_tensor::createMemRefDebugPrint(builder, loc, crdTp, coorOp, lvl, 
-                                        /*componentNum=1 (coordinates)*/ 1, tid);
+  sparse_tensor::createMemRefDebugPrint(builder, loc, tensor, crdTp, coorOp, lvl, 
+                                        /*componentNum=1 (coordinates)*/ 1);
   return coorOp;
 }
 
@@ -759,8 +785,8 @@ Value sparse_tensor::genToCoordinatesBuffer(OpBuilder &builder, Location loc,
   const Type crdTp = srcTp.getCrdType();
   const Type memTp = get1DMemRefType(crdTp, /*withLayout=*/false);
   Value coorBufOp = builder.create<ToCoordinatesBufferOp>(loc, memTp, tensor);
-  sparse_tensor::createMemRefDebugPrint(builder, loc, crdTp, coorBufOp, 
-                                        /*level=0 (none)*/ 0, /*componentNum=1 (coordinates)*/ 1, tid);
+  sparse_tensor::createMemRefDebugPrint(builder, loc, tensor, crdTp, coorBufOp, 
+                                        /*level=0 (none)*/ 0, /*componentNum=1 (coordinates)*/ 1);
   return coorBufOp;
 }
 
@@ -770,8 +796,8 @@ Value sparse_tensor::genToValues(OpBuilder &builder, Location loc,
   Type valTp = get1DMemRefType(srcTp.getElementType(),
                                /*withLayout=*/false);
   Value valOp = builder.create<ToValuesOp>(loc, valTp, tensor);
-  sparse_tensor::createMemRefDebugPrint(builder, loc, srcTp.getElementType(), valOp, 
-                                        /*level=0 (none)*/ 0, /*componentNum=1 (coordinates)*/ 2, tid);
+  sparse_tensor::createMemRefDebugPrint(builder, loc, tensor, srcTp.getElementType(), valOp, 
+                                        /*level=0 (none)*/ 0, /*componentNum=1 (coordinates)*/ 2);
   return valOp;
 }
 

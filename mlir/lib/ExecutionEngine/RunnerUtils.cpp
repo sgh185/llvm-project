@@ -144,12 +144,12 @@ extern "C" void printMemrefF64(int64_t rank, void *ptr) {
 /*
  * HACK
  */
-extern "C" void printSTComponent(int64_t st_component, int64_t level, int64_t tid) {
+extern "C" void printTensorComponent(int64_t component, int64_t level, int64_t tid) {
   std::string tid_str = "";
   if (tid < 0) tid_str = "unknown";
   else tid_str = std::to_string(tid);
 
-  switch (st_component) {
+  switch (component) {
   case 0:
     printf("positions [lvl = %ld] [tensor id = %s]\n", level, tid_str.c_str());
     break;

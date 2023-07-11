@@ -467,8 +467,8 @@ void LoopEmitter::initializeLoopEmit(
       /*
        * Add debugging support -> print dense tensor (flattened)
        */
-      sparse_tensor::createMemRefDebugPrint(builder, loc, elementType, denseVal, 
-                                            /*level=0 (none)*/ 0, /*component=3 (dense)*/ 3, t);
+      sparse_tensor::createMemRefDebugPrint(builder, loc, tensor, elementType, denseVal, 
+                                            /*level=0 (none)*/ 0, /*component=3 (dense)*/ 3);
 
     } else {
       // Annotated sparse tensors.
