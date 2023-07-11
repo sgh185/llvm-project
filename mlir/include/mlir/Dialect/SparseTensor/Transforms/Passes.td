@@ -126,7 +126,7 @@ def PostSparsificationRewrite : Pass<"post-sparsification-rewrite", "ModuleOp"> 
     "sparse_tensor::SparseTensorDialect",
   ];
   let options = [
-    Option<"enableSTPrints", "enable-st-prints", "bool",
+    Option<"enableITPrints", "enable-it-prints", "bool",
            "false", "Enable runtime library calls to print sparse tensor components">,
     Option<"enableRuntimeLibrary", "enable-runtime-library", "bool",
            "true", "Enable runtime library for manipulating sparse tensors">,

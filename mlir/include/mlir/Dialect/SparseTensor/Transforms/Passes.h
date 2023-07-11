@@ -158,12 +158,12 @@ std::unique_ptr<Pass> createPreSparsificationRewritePass();
 //===----------------------------------------------------------------------===//
 
 void populatePostSparsificationRewriting(RewritePatternSet &patterns,
-                                         bool enableSTPrints, bool enableRT, 
+                                         bool enableITPrints, bool enableRT, 
                                          bool enableForeach, bool enableConvert);
 
 std::unique_ptr<Pass> createPostSparsificationRewritePass();
 std::unique_ptr<Pass>
-createPostSparsificationRewritePass(bool enableSTP, bool enableRT, 
+createPostSparsificationRewritePass(bool enableITP, bool enableRT, 
                                     bool enableForeach = true, bool enableConvert = true);
 
 //===----------------------------------------------------------------------===//
@@ -190,7 +190,7 @@ std::unique_ptr<Pass> createSparsificationAndBufferizationPass(
     bool createSparseDeallocs, bool enableRuntimeLibrary,
     bool enableBufferInitialization, unsigned vectorLength,
     bool enableVLAVectorization, bool enableSIMDIndex32,
-    bool enableSTPrints);
+    bool enableITPrints);
 
 void populateSparseBufferRewriting(RewritePatternSet &patterns,
                                    bool enableBufferInitialization);

@@ -73,9 +73,9 @@ struct SparseCompilerOptions
       desc("Enable runtime library for manipulating sparse tensors"),
       init(true)};
 
-  PassOptions::Option<bool> enableSTPrints{
-      *this, "enable-st-prints",
-      desc("Enable runtime library calls to print sparse tensor components"),
+  PassOptions::Option<bool> enableITPrints{
+      *this, "enable-it-prints",
+      desc("Enable runtime library calls to print input tensor components"),
       init(false)};
 
   PassOptions::Option<bool> testBufferizationAnalysisOnly{
