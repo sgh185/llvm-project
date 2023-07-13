@@ -29,6 +29,8 @@ import operator
 import os
 import threading
 
+import sparse
+
 # Import MLIR related modules.
 from mlir import execution_engine
 from mlir import ir
@@ -743,6 +745,78 @@ class IndexExpr(abc.ABC):
                 "llvm.emit_c_interface"
             ] = ir.UnitAttr.get()
 
+    def _insert_and_emit_kernel_inputs(self, module: ir.Module, sparsity: Optional[List[float]] = None) -> str:
+        """Inserts random kernel inputs as MLIR operations in a @main
+        function and emits @main and the kernel function.
+
+        Args:
+          module: The MLIR module to insert the kernel function.
+          sparsity: A list of sparsity values for each random input tensor + result tensor
+
+        Returns:
+          The transformed MLIR module as a string
+        """
+
+        # Assumptions:
+        # 1. MLIR generated using the modified PyTACO frontend
+        #    and codegen.py have a specific format -> a single 
+        #    function within the module -> i.e. the "kernel."
+        # 2. Kernels have only tensor inputs and outputs
+        # 3. Each tensor is marked with a sparse encoding, even
+        #    for dense tensors.
+        # 4. All tensor dimensions are known at compile time.
+
+        # Fetch the kernel function from @module
+        kernel_func = module.body.operations[0]
+
+        # Set up stem for @main:
+        main_func = "\
+            func.func @main() {\n\
+                %none = llvm.mlir.null : !llvm.ptr<i8>\n"
+
+        # Parse the kernel function arguments and return value
+        np.set_printoptions(linewidth=np.inf)
+        arg_types = []
+        if not sparsity: sparsity = [0.1] * len(kernel_func.arguments)
+        for i, arg in enumerate(kernel_func.arguments):
+            # Get the tensor type, shape, encoding, and internal type
+            tensor_type = arg.type
+            assert isinstance(tensor_type, ir.RankedTensorType)
+            shape = tensor_type.shape
+            elm_type = tensor_type.element_type
+            arg_types.append(tensor_type)
+
+            # Bulid a tensor type without the encoding
+            tensor_type_no_enc = ir.RankedTensorType.get(shape, elm_type)
+
+            # Generate a random tensor for the given sparsity value
+            input_tensor_coo = sparse.random(shape, density=sparsity[i])
+            input_tensor_dense = input_tensor_coo.todense()
+            tensor_values = np.array2string(input_tensor_dense, separator=',')
+
+            # Emit the tensor as a constant, convert it to the corresponding
+            # sparse format, and dump it for debugging -> as MLIR operations
+            input_tensor_ops = f"\
+                %c{i} = arith.constant dense<{tensor_values}> : {tensor_type_no_enc}\n\
+                %t{i} = sparse_tensor.convert %c{i} : {tensor_type_no_enc} to {tensor_type}\n\
+                sparse_tensor.out %t{i}, %none : {tensor_type}, !llvm.ptr<i8>\n"
+            
+            main_func += input_tensor_ops
+
+        # Add the call and result sparse_tensor.out to the function
+        call = f"%res = call @{str(kernel_func.name)[1:-1]}({', '.join([f'%t{i}' for i in range(len(arg_types))])}) : ({', '.join([str(at) for at in arg_types])}) -> {kernel_func.type.results[0]}\n"
+        last_out = f"sparse_tensor.out %res, %none : {kernel_func.type.results[0]}, !llvm.ptr<i8>\n"
+        main_func += (call + last_out)
+        
+        # Add return
+        main_func += "return\n}\n"
+
+        # Add it to the module as string
+        curr_module = str(module)
+        mlir_code = main_func.join(curr_module.rsplit('}', 1)) + "\n}\n"
+        return mlir_code
+
+
     def get_input_accesses(self) -> List["Access"]:
         """Compute the list of input accesses for the expression."""
         input_accesses = []
@@ -783,7 +857,8 @@ class IndexExpr(abc.ABC):
         self,
         dst: "Tensor",
         dst_indices: Tuple["IndexVar", ...],
-        prefix: str = ""
+        prefix: str = "",
+        generate_inputs: bool = False
     ) -> str:
         """Emits the tensor assignment dst[dst_indices] = expression as MLIR.
 
@@ -795,6 +870,7 @@ class IndexExpr(abc.ABC):
           dst: The destination tensor.
           dst_indices: The tuple of IndexVar used to access the destination tensor.
           prefix: A string prepended to the name for the emitted MLIR function.
+          generate_inputs: Flag to generate random inputs for the kernel.
 
         Returns:
           MLIR function generated as a string.
@@ -811,7 +887,8 @@ class IndexExpr(abc.ABC):
             self._emit_assignment(
                 module, dst, dst_indices, expr_to_info, input_accesses, prefix
             )
-            mlir_code = str(module)
+            if generate_inputs: mlir_code = self._insert_and_emit_kernel_inputs(module)
+            else: mlir_code = str(module)
             return mlir_code
 
 
@@ -1516,7 +1593,7 @@ class Tensor:
             self, self._assignment.indices
         )
 
-    def emit_mlir(self, force_recompile: bool = False, prefix: str = "") -> Union[None, str]:
+    def emit_mlir(self, force_recompile: bool = False, prefix: str = "", generate_inputs: bool = False) -> Union[None, str]:
         """Emits the tensor assignment as high-level MLIR.
 
         The code generation takes place in the underlying assignment
@@ -1526,6 +1603,7 @@ class Tensor:
           force_recompile: A boolean value to enable recompilation, such as for the
             purpose of timing.
           prefix: A string prepended to the name for the emitted MLIR function.
+          generate_inputs: Flag that controls test input generation.
 
         Returns:
           MLIR function generated as a string.
@@ -1539,7 +1617,7 @@ class Tensor:
             return None
 
         return self._assignment.expression.emit_mlir(
-            self, self._assignment.indices, prefix
+            self, self._assignment.indices, prefix, generate_inputs
         )
 
     def compute(self) -> None:
