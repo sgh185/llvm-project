@@ -4443,6 +4443,33 @@ defm FNMUL  : TwoOperandFPDataNeg<0b1000, "fnmul", any_fmul>;
 }
 defm FSUB   : TwoOperandFPData<0b0011, "fsub", any_fsub>;
 
+multiclass FMULScalarFromIndexedLane0Patterns<string inst,
+                                              string inst_f16_suffix,
+                                              string inst_f32_suffix,
+                                              string inst_f64_suffix,
+                                              SDPatternOperator OpNode,
+                                              list<Predicate> preds = []> {
+  let Predicates = !listconcat(preds, [HasFullFP16]) in {
+  def : Pat<(f16 (OpNode (f16 FPR16:$Rn),
+                         (f16 (vector_extract (v8f16 V128:$Rm), (i64 0))))),
+            (!cast<Instruction>(inst # inst_f16_suffix)
+              FPR16:$Rn, (EXTRACT_SUBREG V128:$Rm, hsub))>;
+  }
+  let Predicates = preds in {
+  def : Pat<(f32 (OpNode (f32 FPR32:$Rn),
+                         (f32 (vector_extract (v4f32 V128:$Rm), (i64 0))))),
+            (!cast<Instruction>(inst # inst_f32_suffix)
+              FPR32:$Rn, (EXTRACT_SUBREG V128:$Rm, ssub))>;
+  def : Pat<(f64 (OpNode (f64 FPR64:$Rn),
+                         (f64 (vector_extract (v2f64 V128:$Rm), (i64 0))))),
+            (!cast<Instruction>(inst # inst_f64_suffix)
+              FPR64:$Rn, (EXTRACT_SUBREG V128:$Rm, dsub))>;
+  }
+}
+
+defm : FMULScalarFromIndexedLane0Patterns<"FMUL", "Hrr", "Srr", "Drr",
+                                          any_fmul>;
+
 // Match reassociated forms of FNMUL.
 def : Pat<(fmul (fneg FPR16:$a), (f16 FPR16:$b)),
           (FNMULHrr FPR16:$a, FPR16:$b)>,
@@ -5248,6 +5275,10 @@ let Predicates = [HasRDM] in {
             (SQRDMLSHv1i32 FPR32:$Rd, FPR32:$Rn, FPR32:$Rm)>;
 }
 
+defm : FMULScalarFromIndexedLane0Patterns<"FMULX", "16", "32", "64",
+                                          int_aarch64_neon_fmulx,
+                                          [HasNEONorSME]>;
+
 def : InstAlias<"cmls $dst, $src1, $src2",
                 (CMHSv1i64 FPR64:$dst, FPR64:$src2, FPR64:$src1), 0>;
 def : InstAlias<"cmle $dst, $src1, $src2",
@@ -5622,6 +5653,34 @@ defm : Neon_mul_acc_widen_patterns<sub, AArch64umull,
      UMLSLv8i8_v8i16, UMLSLv4i16_v4i32, UMLSLv2i32_v2i64>;
 defm : Neon_mul_acc_widen_patterns<sub, AArch64smull,
      SMLSLv8i8_v8i16, SMLSLv4i16_v4i32, SMLSLv2i32_v2i64>;
+
+
+multiclass Neon_addl_extract_patterns<SDPatternOperator opnode, SDPatternOperator ext, string Inst> {
+  def : Pat<(v4i16 (opnode (extract_subvector (ext (v8i8 V64:$Rn)), (i64 0)),
+                           (extract_subvector (ext (v8i8 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v8i16 (!cast<Instruction>(Inst#"Lv8i8_v8i16") V64:$Rn, V64:$Rm)), dsub)>;
+  def : Pat<(v2i32 (opnode (extract_subvector (ext (v4i16 V64:$Rn)), (i64 0)),
+                           (extract_subvector (ext (v4i16 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v4i32 (!cast<Instruction>(Inst#"Lv4i16_v4i32") V64:$Rn, V64:$Rm)), dsub)>;
+  def : Pat<(v1i64 (opnode (extract_subvector (ext (v2i32 V64:$Rn)), (i64 0)),
+                           (extract_subvector (ext (v2i32 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v2i64 (!cast<Instruction>(Inst#"Lv2i32_v2i64") V64:$Rn, V64:$Rm)), dsub)>;
+
+  def : Pat<(v4i16 (opnode (v4i16 V64:$Rn),
+                           (extract_subvector (ext (v8i8 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v8i16 (!cast<Instruction>(Inst#"Wv8i8_v8i16") (INSERT_SUBREG (v8i16 (IMPLICIT_DEF)), V64:$Rn, dsub), V64:$Rm)), dsub)>;
+  def : Pat<(v2i32 (opnode (v2i32 V64:$Rn),
+                           (extract_subvector (ext (v4i16 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v4i32 (!cast<Instruction>(Inst#"Wv4i16_v4i32") (INSERT_SUBREG (v4i32 (IMPLICIT_DEF)), V64:$Rn, dsub), V64:$Rm)), dsub)>;
+  def : Pat<(v1i64 (opnode (v1i64 V64:$Rn),
+                           (extract_subvector (ext (v2i32 V64:$Rm)), (i64 0)))),
+            (EXTRACT_SUBREG (v2i64 (!cast<Instruction>(Inst#"Wv2i32_v2i64") (INSERT_SUBREG (v2i64 (IMPLICIT_DEF)), V64:$Rn, dsub), V64:$Rm)), dsub)>;
+}
+
+defm : Neon_addl_extract_patterns<add, zanyext, "UADD">;
+defm : Neon_addl_extract_patterns<add, sext, "SADD">;
+defm : Neon_addl_extract_patterns<sub, zanyext, "USUB">;
+defm : Neon_addl_extract_patterns<sub, sext, "SSUB">;
 
 // CodeGen patterns for addhn and subhn instructions, which can actually be
 // written in LLVM IR without too much difficulty.

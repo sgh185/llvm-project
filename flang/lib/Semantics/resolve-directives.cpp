@@ -85,11 +85,6 @@ protected:
   Symbol &MakeAssocSymbol(const SourceName &name, Symbol &prev) {
     return MakeAssocSymbol(name, prev, currScope());
   }
-  static const parser::Name *GetDesignatorNameIfDataRef(
-      const parser::Designator &designator) {
-    const auto *dataRef{std::get_if<parser::DataRef>(&designator.u)};
-    return dataRef ? std::get_if<parser::Name>(&dataRef->u) : nullptr;
-  }
   void AddDataSharingAttributeObject(SymbolRef object) {
     dataSharingAttributeObjects_.insert(object);
   }
@@ -156,8 +151,7 @@ public:
   bool Pre(const parser::AccClause::Detach &);
 
   bool Pre(const parser::AccClause::Copy &x) {
-    ResolveAccObjectList(x.v, Symbol::Flag::AccCopyIn);
-    ResolveAccObjectList(x.v, Symbol::Flag::AccCopyOut);
+    ResolveAccObjectList(x.v, Symbol::Flag::AccCopy);
     return false;
   }
 
@@ -241,7 +235,7 @@ private:
   void ResolveAccObject(const parser::AccObject &, Symbol::Flag);
   Symbol *ResolveAcc(const parser::Name &, Symbol::Flag, Scope &);
   Symbol *ResolveAcc(Symbol &, Symbol::Flag, Scope &);
-  Symbol *ResolveName(const parser::Name &);
+  Symbol *ResolveName(const parser::Name &, bool parentScope = false);
   Symbol *ResolveAccCommonBlockName(const parser::Name *);
   Symbol *DeclareOrMarkOtherAccessEntity(const parser::Name &, Symbol::Flag);
   Symbol *DeclareOrMarkOtherAccessEntity(Symbol &, Symbol::Flag);
@@ -440,8 +434,8 @@ public:
   }
 
   bool Pre(const parser::OmpAlignedClause &x) {
-    const auto &alignedNameList{std::get<std::list<parser::Name>>(x.t)};
-    ResolveOmpNameList(alignedNameList, Symbol::Flag::OmpAligned);
+    const auto &alignedNameList{std::get<parser::OmpObjectList>(x.t)};
+    ResolveOmpObjectList(alignedNameList, Symbol::Flag::OmpAligned);
     return false;
   }
 
@@ -505,7 +499,8 @@ public:
       common::visit(
           common::visitors{
               [&](const parser::Designator &designator) {
-                if (const auto *name{GetDesignatorNameIfDataRef(designator)}) {
+                if (const auto *name{
+                        semantics::getDesignatorNameIfDataRef(designator)}) {
                   if (name->symbol &&
                       semantics::IsAssumedSizeArray(*name->symbol)) {
                     context_.Say(designator.source,
@@ -790,8 +785,13 @@ bool AccAttributeVisitor::Pre(const parser::OpenACCStandaloneConstruct &x) {
   return true;
 }
 
-Symbol *AccAttributeVisitor::ResolveName(const parser::Name &name) {
+Symbol *AccAttributeVisitor::ResolveName(
+    const parser::Name &name, bool parentScope) {
   Symbol *prev{currScope().FindSymbol(name.source)};
+  // Check in parent scope if asked for.
+  if (!prev && parentScope) {
+    prev = currScope().parent().FindSymbol(name.source);
+  }
   if (prev != name.symbol) {
     name.symbol = prev;
   }
@@ -801,7 +801,7 @@ Symbol *AccAttributeVisitor::ResolveName(const parser::Name &name) {
 bool AccAttributeVisitor::Pre(const parser::OpenACCRoutineConstruct &x) {
   const auto &optName{std::get<std::optional<parser::Name>>(x.t)};
   if (optName) {
-    if (!ResolveName(*optName)) {
+    if (!ResolveName(*optName, true)) {
       context_.Say((*optName).source,
           "No function or subroutine declared for '%s'"_err_en_US,
           (*optName).source);
@@ -1060,15 +1060,19 @@ void AccAttributeVisitor::Post(const parser::Name &name) {
 
 Symbol *AccAttributeVisitor::ResolveAccCommonBlockName(
     const parser::Name *name) {
-  if (!name) {
-    return nullptr;
-  } else if (auto *prev{
-                 GetContext().scope.parent().FindCommonBlock(name->source)}) {
+  if (auto *prev{name
+              ? GetContext().scope.parent().FindCommonBlock(name->source)
+              : nullptr}) {
     name->symbol = prev;
     return prev;
-  } else {
-    return nullptr;
   }
+  // Check if the Common Block is declared in the current scope
+  if (auto *commonBlockSymbol{
+          name ? GetContext().scope.FindCommonBlock(name->source) : nullptr}) {
+    name->symbol = commonBlockSymbol;
+    return commonBlockSymbol;
+  }
+  return nullptr;
 }
 
 void AccAttributeVisitor::ResolveAccObjectList(
@@ -1083,7 +1087,8 @@ void AccAttributeVisitor::ResolveAccObject(
   common::visit(
       common::visitors{
           [&](const parser::Designator &designator) {
-            if (const auto *name{GetDesignatorNameIfDataRef(designator)}) {
+            if (const auto *name{
+                    semantics::getDesignatorNameIfDataRef(designator)}) {
               if (auto *symbol{ResolveAcc(*name, accFlag, currScope())}) {
                 AddToContextObjectWithDSA(*symbol, accFlag);
                 if (dataSharingAttributeFlags.test(accFlag)) {
@@ -1731,7 +1736,8 @@ void OmpAttributeVisitor::ResolveOmpObject(
   common::visit(
       common::visitors{
           [&](const parser::Designator &designator) {
-            if (const auto *name{GetDesignatorNameIfDataRef(designator)}) {
+            if (const auto *name{
+                    semantics::getDesignatorNameIfDataRef(designator)}) {
               if (auto *symbol{ResolveOmp(*name, ompFlag, currScope())}) {
                 if (dataCopyingAttributeFlags.test(ompFlag)) {
                   CheckDataCopyingClause(*name, *symbol, ompFlag);

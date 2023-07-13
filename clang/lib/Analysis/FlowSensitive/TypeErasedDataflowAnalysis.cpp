@@ -145,7 +145,7 @@ private:
       ConditionValue = false;
     }
 
-    Env.addToFlowCondition(*Val);
+    Env.addToFlowCondition(Val->formula());
     return {&Cond, ConditionValue};
   }
 
@@ -275,8 +275,7 @@ public:
 ///   `std::nullopt` represent basic blocks that are not evaluated yet.
 static TypeErasedDataflowAnalysisState
 computeBlockInputState(const CFGBlock &Block, AnalysisContext &AC) {
-  llvm::DenseSet<const CFGBlock *> Preds;
-  Preds.insert(Block.pred_begin(), Block.pred_end());
+  std::vector<const CFGBlock *> Preds(Block.pred_begin(), Block.pred_end());
   if (Block.getTerminator().isTemporaryDtorsBranch()) {
     // This handles a special case where the code that produced the CFG includes
     // a conditional operator with a branch that constructs a temporary and
@@ -305,7 +304,7 @@ computeBlockInputState(const CFGBlock &Block, AnalysisContext &AC) {
       auto &StmtToBlock = AC.CFCtx.getStmtToBlock();
       auto StmtBlock = StmtToBlock.find(Block.getTerminatorStmt());
       assert(StmtBlock != StmtToBlock.end());
-      Preds.erase(StmtBlock->getSecond());
+      llvm::erase_value(Preds, StmtBlock->getSecond());
     }
   }
 
@@ -366,27 +365,40 @@ builtinTransferInitializer(const CFGInitializer &Elt,
   assert(Init != nullptr);
 
   auto &Env = InputState.Env;
-  const auto &ThisLoc =
-      *cast<AggregateStorageLocation>(Env.getThisPointeeStorageLocation());
+  auto &ThisLoc = *Env.getThisPointeeStorageLocation();
 
-  const FieldDecl *Member = Init->getMember();
-  if (Member == nullptr)
-    // Not a field initializer.
+  if (!Init->isAnyMemberInitializer())
+    // FIXME: Handle base initialization
     return;
 
   auto *InitStmt = Init->getInit();
   assert(InitStmt != nullptr);
+
+  const FieldDecl *Member = nullptr;
+  StorageLocation *MemberLoc = nullptr;
+  if (Init->isMemberInitializer()) {
+    Member = Init->getMember();
+    MemberLoc = &ThisLoc.getChild(*Member);
+  } else {
+    IndirectFieldDecl *IndirectField = Init->getIndirectMember();
+    assert(IndirectField != nullptr);
+    MemberLoc = &ThisLoc;
+    for (const auto *I : IndirectField->chain()) {
+      Member = cast<FieldDecl>(I);
+      MemberLoc = &cast<AggregateStorageLocation>(MemberLoc)->getChild(*Member);
+    }
+  }
+  assert(Member != nullptr);
+  assert(MemberLoc != nullptr);
 
   if (Member->getType()->isReferenceType()) {
     auto *InitStmtLoc = Env.getStorageLocationStrict(*InitStmt);
     if (InitStmtLoc == nullptr)
       return;
 
-    auto &MemberLoc = ThisLoc.getChild(*Member);
-    Env.setValue(MemberLoc, Env.create<ReferenceValue>(*InitStmtLoc));
+    Env.setValue(*MemberLoc, Env.create<ReferenceValue>(*InitStmtLoc));
   } else if (auto *InitStmtVal = Env.getValueStrict(*InitStmt)) {
-    auto &MemberLoc = ThisLoc.getChild(*Member);
-    Env.setValue(MemberLoc, *InitStmtVal);
+    Env.setValue(*MemberLoc, *InitStmtVal);
   }
 }
 
@@ -570,7 +582,7 @@ runTypeErasedDataflowAnalysis(
     }
   }
 
-  return BlockStates;
+  return std::move(BlockStates);
 }
 
 } // namespace dataflow

@@ -2535,6 +2535,14 @@ private:
     using VecTreeTy = SmallVector<std::unique_ptr<TreeEntry>, 8>;
     TreeEntry(VecTreeTy &Container) : Container(Container) {}
 
+    /// \returns Common mask for reorder indices and reused scalars.
+    SmallVector<int> getCommonMask() const {
+      SmallVector<int> Mask;
+      inversePermutation(ReorderIndices, Mask);
+      ::addMask(Mask, ReuseShuffleIndices);
+      return Mask;
+    }
+
     /// \returns true if the scalars in VL are equal to this entry.
     bool isSame(ArrayRef<Value *> VL) const {
       auto &&IsSame = [VL](ArrayRef<Value *> Scalars, ArrayRef<int> Mask) {
@@ -7438,15 +7446,11 @@ BoUpSLP::getEntryCost(const TreeEntry *E, ArrayRef<Value *> VectorizedVals,
 
       ScalarCost = TTI->getPointersChainCost(Ptrs, BasePtr, PtrsInfo, ScalarTy,
                                              CostKind);
-
-      // Remark: it not quite correct to use scalar GEP cost for a vector GEP,
-      // but it's not clear how to do that without having vector GEP arguments
-      // ready.
-      // Perhaps using just TTI::TCC_Free/TTI::TCC_Basic would be better option.
-      if (const auto *Base = dyn_cast<GetElementPtrInst>(BasePtr)) {
-        SmallVector<const Value *> Indices(Base->indices());
-        VecCost = TTI->getGEPCost(Base->getSourceElementType(),
-                                  Base->getPointerOperand(), Indices, CostKind);
+      if (auto *BaseGEP = dyn_cast<GEPOperator>(BasePtr)) {
+        SmallVector<const Value *> Indices(BaseGEP->indices());
+        VecCost = TTI->getGEPCost(BaseGEP->getSourceElementType(),
+                                  BaseGEP->getPointerOperand(), Indices, VecTy,
+                                  CostKind);
       }
     }
 
@@ -7889,11 +7893,11 @@ BoUpSLP::getEntryCost(const TreeEntry *E, ArrayRef<Value *> VectorizedVals,
         VecCost +=
             TTI->getArithmeticInstrCost(E->getAltOpcode(), VecTy, CostKind);
       } else if (auto *CI0 = dyn_cast<CmpInst>(VL0)) {
-        VecCost = TTI->getCmpSelInstrCost(E->getOpcode(), ScalarTy,
-                                          Builder.getInt1Ty(),
+        auto *MaskTy = FixedVectorType::get(Builder.getInt1Ty(), VL.size());
+        VecCost = TTI->getCmpSelInstrCost(E->getOpcode(), VecTy, MaskTy,
                                           CI0->getPredicate(), CostKind, VL0);
         VecCost += TTI->getCmpSelInstrCost(
-            E->getOpcode(), ScalarTy, Builder.getInt1Ty(),
+            E->getOpcode(), VecTy, MaskTy,
             cast<CmpInst>(E->getAltOp())->getPredicate(), CostKind,
             E->getAltOp());
       } else {
@@ -9070,8 +9074,8 @@ Instruction &BoUpSLP::getLastInstructionInBundle(const TreeEntry *E) {
 
   // Set the insert point to the beginning of the basic block if the entry
   // should not be scheduled.
-  if (E->State != TreeEntry::NeedToGather &&
-      (doesNotNeedToSchedule(E->Scalars) ||
+  if (doesNotNeedToSchedule(E->Scalars) ||
+      (E->State != TreeEntry::NeedToGather &&
        all_of(E->Scalars, isVectorLikeInstWithConstOps))) {
     Instruction *InsertInst;
     if ((E->getOpcode() == Instruction::GetElementPtr &&
@@ -9751,16 +9755,23 @@ ResTy BoUpSLP::processBuildVector(const TreeEntry *E, Args &...Params) {
             << "SLP: perfect diamond match for gather bundle that starts with "
             << *E->Scalars.front() << ".\n");
         // Restore the mask for previous partially matched values.
-        for (auto [I, V] : enumerate(E->Scalars)) {
-          if (isa<PoisonValue>(V)) {
-            Mask[I] = PoisonMaskElem;
-            continue;
-          }
-          if (Mask[I] == PoisonMaskElem)
+        if (Entries.front()->ReorderIndices.empty() &&
+            ((Entries.front()->ReuseShuffleIndices.empty() &&
+              E->Scalars.size() == Entries.front()->Scalars.size()) ||
+             (E->Scalars.size() ==
+              Entries.front()->ReuseShuffleIndices.size()))) {
+          std::iota(Mask.begin(), Mask.end(), 0);
+        } else {
+          for (auto [I, V] : enumerate(E->Scalars)) {
+            if (isa<PoisonValue>(V)) {
+              Mask[I] = PoisonMaskElem;
+              continue;
+            }
             Mask[I] = Entries.front()->findLaneForValue(V);
+          }
         }
         ShuffleBuilder.add(Entries.front()->VectorizedValue, Mask);
-        Res = ShuffleBuilder.finalize(E->ReuseShuffleIndices);
+        Res = ShuffleBuilder.finalize(E->getCommonMask());
         return Res;
       }
       if (!Resized) {
@@ -12690,6 +12701,9 @@ class HorizontalReduction {
       return I->getFastMathFlags().noNaNs();
     }
 
+    if (Kind == RecurKind::FMaximum || Kind == RecurKind::FMinimum)
+      return true;
+
     return I->isAssociative();
   }
 
@@ -12740,6 +12754,18 @@ class HorizontalReduction {
                                minnum(cast<ConstantFP>(LHS)->getValueAPF(),
                                       cast<ConstantFP>(RHS)->getValueAPF()));
       return Builder.CreateBinaryIntrinsic(Intrinsic::minnum, LHS, RHS);
+    case RecurKind::FMaximum:
+      if (IsConstant)
+        return ConstantFP::get(LHS->getType(),
+                               maximum(cast<ConstantFP>(LHS)->getValueAPF(),
+                                      cast<ConstantFP>(RHS)->getValueAPF()));
+      return Builder.CreateBinaryIntrinsic(Intrinsic::maximum, LHS, RHS);
+    case RecurKind::FMinimum:
+      if (IsConstant)
+        return ConstantFP::get(LHS->getType(),
+                               minimum(cast<ConstantFP>(LHS)->getValueAPF(),
+                                      cast<ConstantFP>(RHS)->getValueAPF()));
+      return Builder.CreateBinaryIntrinsic(Intrinsic::minimum, LHS, RHS);
     case RecurKind::SMax:
       if (IsConstant || UseSelect) {
         Value *Cmp = Builder.CreateICmpSGT(LHS, RHS, Name);
@@ -12822,6 +12848,10 @@ public:
     if (match(I, m_Intrinsic<Intrinsic::minnum>(m_Value(), m_Value())))
       return RecurKind::FMin;
 
+    if (match(I, m_Intrinsic<Intrinsic::maximum>(m_Value(), m_Value())))
+      return RecurKind::FMaximum;
+    if (match(I, m_Intrinsic<Intrinsic::minimum>(m_Value(), m_Value())))
+      return RecurKind::FMinimum;
     // This matches either cmp+select or intrinsics. SLP is expected to handle
     // either form.
     // TODO: If we are canonicalizing to intrinsics, we can remove several
@@ -13789,19 +13819,15 @@ private:
     }
     case RecurKind::FMax:
     case RecurKind::FMin:
+    case RecurKind::FMaximum:
+    case RecurKind::FMinimum:
     case RecurKind::SMax:
     case RecurKind::SMin:
     case RecurKind::UMax:
     case RecurKind::UMin: {
-      if (!AllConsts) {
-        auto *VecCondTy =
-            cast<VectorType>(CmpInst::makeCmpResultType(VectorTy));
-        bool IsUnsigned =
-            RdxKind == RecurKind::UMax || RdxKind == RecurKind::UMin;
-        VectorCost = TTI->getMinMaxReductionCost(VectorTy, VecCondTy,
-                                                 IsUnsigned, FMF, CostKind);
-      }
       Intrinsic::ID Id = getMinMaxReductionIntrinsicOp(RdxKind);
+      if (!AllConsts)
+        VectorCost = TTI->getMinMaxReductionCost(Id, VectorTy, FMF, CostKind);
       ScalarCost = EvaluateScalarCost([&]() {
         IntrinsicCostAttributes ICA(Id, ScalarTy, {ScalarTy, ScalarTy}, FMF);
         return TTI->getIntrinsicInstrCost(ICA, CostKind);
@@ -14125,6 +14151,10 @@ static bool matchRdxBop(Instruction *I, Value *&V0, Value *&V1) {
   if (match(I, m_Intrinsic<Intrinsic::maxnum>(m_Value(V0), m_Value(V1))))
     return true;
   if (match(I, m_Intrinsic<Intrinsic::minnum>(m_Value(V0), m_Value(V1))))
+    return true;
+  if (match(I, m_Intrinsic<Intrinsic::maximum>(m_Value(V0), m_Value(V1))))
+    return true;
+  if (match(I, m_Intrinsic<Intrinsic::minimum>(m_Value(V0), m_Value(V1))))
     return true;
   if (match(I, m_Intrinsic<Intrinsic::smax>(m_Value(V0), m_Value(V1))))
     return true;
