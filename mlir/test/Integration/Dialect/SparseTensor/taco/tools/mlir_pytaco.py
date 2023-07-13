@@ -745,13 +745,13 @@ class IndexExpr(abc.ABC):
                 "llvm.emit_c_interface"
             ] = ir.UnitAttr.get()
 
-    def _insert_and_emit_kernel_inputs(self, module: ir.Module, sparsity: Optional[List[float]] = None) -> str:
+    def _insert_and_emit_kernel_inputs(self, module: ir.Module, density: Optional[List[float]] = None) -> str:
         """Inserts random kernel inputs as MLIR operations in a @main
         function and emits @main and the kernel function.
 
         Args:
           module: The MLIR module to insert the kernel function.
-          sparsity: A list of sparsity values for each random input tensor + result tensor
+          density: A list of density values for each random input tensor
 
         Returns:
           The transformed MLIR module as a string
@@ -777,7 +777,8 @@ class IndexExpr(abc.ABC):
         # Parse the kernel function arguments and return value
         np.set_printoptions(linewidth=np.inf)
         arg_types = []
-        if not sparsity: sparsity = [0.1] * len(kernel_func.arguments)
+        if not density: density = [0.1] * len(kernel_func.arguments)
+        else: assert len(density) == len(kernel_func.arguments)
         for i, arg in enumerate(kernel_func.arguments):
             # Get the tensor type, shape, encoding, and internal type
             tensor_type = arg.type
@@ -789,8 +790,8 @@ class IndexExpr(abc.ABC):
             # Bulid a tensor type without the encoding
             tensor_type_no_enc = ir.RankedTensorType.get(shape, elm_type)
 
-            # Generate a random tensor for the given sparsity value
-            input_tensor_coo = sparse.random(shape, density=sparsity[i])
+            # Generate a random tensor for the given density value
+            input_tensor_coo = sparse.random(shape, density=density[i])
             input_tensor_dense = input_tensor_coo.todense()
             tensor_values = np.array2string(input_tensor_dense, separator=',')
 
@@ -858,7 +859,8 @@ class IndexExpr(abc.ABC):
         dst: "Tensor",
         dst_indices: Tuple["IndexVar", ...],
         prefix: str = "",
-        generate_inputs: bool = False
+        generate_inputs: bool = False,
+        density: Optional[List[float]] = None
     ) -> str:
         """Emits the tensor assignment dst[dst_indices] = expression as MLIR.
 
@@ -871,6 +873,7 @@ class IndexExpr(abc.ABC):
           dst_indices: The tuple of IndexVar used to access the destination tensor.
           prefix: A string prepended to the name for the emitted MLIR function.
           generate_inputs: Flag to generate random inputs for the kernel.
+          density: A list of density values for each random input tensor
 
         Returns:
           MLIR function generated as a string.
@@ -887,7 +890,7 @@ class IndexExpr(abc.ABC):
             self._emit_assignment(
                 module, dst, dst_indices, expr_to_info, input_accesses, prefix
             )
-            if generate_inputs: mlir_code = self._insert_and_emit_kernel_inputs(module)
+            if generate_inputs: mlir_code = self._insert_and_emit_kernel_inputs(module, density)
             else: mlir_code = str(module)
             return mlir_code
 
@@ -1593,7 +1596,13 @@ class Tensor:
             self, self._assignment.indices
         )
 
-    def emit_mlir(self, force_recompile: bool = False, prefix: str = "", generate_inputs: bool = False) -> Union[None, str]:
+    def emit_mlir(
+        self, 
+        force_recompile: bool = False, 
+        prefix: str = "", 
+        generate_inputs: bool = False,
+        density: Optional[List[float]] = None
+    ) -> Union[None, str]:
         """Emits the tensor assignment as high-level MLIR.
 
         The code generation takes place in the underlying assignment
@@ -1604,6 +1613,7 @@ class Tensor:
             purpose of timing.
           prefix: A string prepended to the name for the emitted MLIR function.
           generate_inputs: Flag that controls test input generation.
+          density: A list of density values for each random input tensor
 
         Returns:
           MLIR function generated as a string.
@@ -1617,7 +1627,7 @@ class Tensor:
             return None
 
         return self._assignment.expression.emit_mlir(
-            self, self._assignment.indices, prefix, generate_inputs
+            self, self._assignment.indices, prefix, generate_inputs, density
         )
 
     def compute(self) -> None:

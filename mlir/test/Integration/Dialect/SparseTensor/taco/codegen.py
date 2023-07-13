@@ -70,7 +70,8 @@ def pytaco_to_mlir(args) -> List[str]:
         if args.v: print(DEBUG, f'Generating MLIR for [{tensor_name}] to @{function_prefix}.main ...')
 
         # MLIR codegen
-        mlir_function = ta.emit_mlir(prefix=function_prefix)
+        if args.density: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=True, density=args.density)
+        else: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=args.gen_inputs)
         assignment_num += 1
 
         # Write to a file
@@ -176,6 +177,15 @@ if __name__ == "__main__":
         action='store_true',
         help='Disable OpenMP parallelization and lowering')
     argparser.add_argument(
+        '--gen-inputs',
+        action='store_true',
+        help='Generate random inputs for target kernel')
+    argparser.add_argument(
+        '--density',
+        type=float,
+        nargs='*',
+        help='Density level within [0, 1] for each input tensor')
+    argparser.add_argument(
         '--disable-dump',
         action='store_true',
         help='Disable printing of IR after each pass')
@@ -188,6 +198,9 @@ if __name__ == "__main__":
         action='store_true',
         help='Verbose')
     args = argparser.parse_args()
+
+    if args.density and not args.gen_inputs:
+        argparser.error("--density requires --gen-inputs.")
 
     if args.output_dir is not None: OUTPUT_DIR = args.output_dir
     if args.kernels_dir is not None: KERNELS_DIR = args.kernels_dir
