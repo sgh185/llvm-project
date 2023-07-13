@@ -24,6 +24,9 @@ DEFAULT_EXTRA = ''
 TRANSLATE = 'mlir-translate'
 TRANSLATE_FLAGS = '-mlir-to-llvmir'
 
+RUNNER = 'mlir-cpu-runner'
+RUNNER_FLAGS = f"-e=main -entry-point-result=void -shared-libs={os.environ['RUNNERLIB']},{os.environ['SUPPORTLIB']}"
+
 import argparse
 import importlib
 import subprocess
@@ -125,6 +128,26 @@ def lower_mlir(args, prefixes: List[str]) -> None:
     return
 
 
+def run_mlir(args, prefixes: List[str]) -> None:
+    # Walk through @prefixes and invoke mlir-cpu-runner
+    # for each .lowered.mlir file corresponding to each prefix
+    for prefix in prefixes:
+        # Build mlir-cpu-runner command
+        lowered_mlir = f'{OUTPUT_DIR}/{prefix}.lowered.mlir'
+        dump_fname = f'{OUTPUT_DIR}/{prefix}.run.out'
+        cmd = f'{RUNNER} {RUNNER_FLAGS} {lowered_mlir} &> {dump_fname}'
+        print(COMMAND, f"Running mlir-cpu-runner on {lowered_mlir}:\n{cmd}")
+
+        # Run the command
+        dump_file = open(dump_fname, 'w')
+        process = subprocess.Popen(cmd, shell=True, stdout=dump_file, stderr=dump_file)
+        process.wait()
+        dump_file.close()
+        if args.v: print(DEBUG, "DONE.")
+
+    return
+
+
 def main(args):
     print(f"================================\n{args.kernel}\n================================")
 
@@ -133,6 +156,9 @@ def main(args):
 
     # Lower MLIR to the LLVM dialect
     lower_mlir(args, tensor_prefixes)
+
+    # Run the generated code, if necessary
+    if args.run: run_mlir(args, tensor_prefixes)
 
     print("================================\n")
     return
@@ -184,7 +210,11 @@ if __name__ == "__main__":
         '--density',
         type=float,
         nargs='*',
-        help='Density level within [0, 1] for each input tensor')
+        help='Density within [0, 1] for input tensors | dependent on --gen-inputs')
+    argparser.add_argument(
+        '--run',
+        action='store_true',
+        help='Run the generated code using mlir-cpu-runner | dependent on --gen-inputs')
     argparser.add_argument(
         '--disable-dump',
         action='store_true',
@@ -201,6 +231,12 @@ if __name__ == "__main__":
 
     if args.density and not args.gen_inputs:
         argparser.error("--density requires --gen-inputs.")
+
+    if args.run and not args.gen_inputs:
+        argparser.error("--run requires --gen-inputs.")
+    
+    if args.run and not args.disable_omp:
+        argparser.error("--run does not currently support OpenMP.")
 
     if args.output_dir is not None: OUTPUT_DIR = args.output_dir
     if args.kernels_dir is not None: KERNELS_DIR = args.kernels_dir
