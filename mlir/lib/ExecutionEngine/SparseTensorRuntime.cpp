@@ -931,7 +931,7 @@ void delSparseTensorReader(void *p) {
 
 void *createSparseTensorWriter(char *filename) {
   SparseTensorWriter *file =
-      (filename[0] == 0) ? &std::cout : new std::ofstream(filename);
+      (!filename || filename[0] == 0) ? &std::cout : new std::ofstream(filename);
   *file << "# extended FROSTT format\n";
   return static_cast<void *>(file);
 }

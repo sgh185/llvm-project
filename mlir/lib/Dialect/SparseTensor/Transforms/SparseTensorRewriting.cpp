@@ -1490,9 +1490,6 @@ void mlir::populatePostSparsificationRewriting(RewritePatternSet &patterns,
                                                bool enableRT,
                                                bool enableForeach,
                                                bool enableConvert) {
-  // HACK -> Set printing flag
-  sparse_tensor::printInputTensor = enableITPrints;
-
   patterns.add<ReshapeRewriter<tensor::ExpandShapeOp>,
                ReshapeRewriter<tensor::CollapseShapeOp>, TensorReshapeRewriter>(
       patterns.getContext());

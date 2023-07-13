@@ -228,7 +228,7 @@ static void createAllocFields(OpBuilder &builder, Location loc,
           loc, sizeHint, constantIndex(builder, loc, 1));
       crdHeuristic = sizeHint;
     } else {
-      posHeuristic = crdHeuristic = constantIndex(builder, loc, 16);
+      posHeuristic = crdHeuristic = constantIndex(builder, loc, 16); // SG: Cause of unknown memref sizes at print
     }
     valHeuristic = sizeHint;
   } else {

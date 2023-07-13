@@ -159,6 +159,9 @@ inline bool hasAnySparseOperandOrResult(Operation *op) {
   return hasAnySparseOperand(op) || hasAnySparseResult(op);
 }
 
+/// Hack -> Global to set printing for input tensors
+extern bool printInputTensor;
+
 //
 // Reordering.
 //

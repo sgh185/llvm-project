@@ -702,7 +702,9 @@ void sparse_tensor::createMemRefDebugPrint(
    * pointers when printing at runtime.
    */
   func::FuncOp func = dyn_cast<func::FuncOp>(builder.getBlock()->getParentOp());
-  if (!func || func.getName() != "main") return; /* only targeting named @main */
+  if (!func) {
+    return;
+  } 
 
   bool tensorIsArg = false;
   unsigned tid = 0;
@@ -714,7 +716,9 @@ void sparse_tensor::createMemRefDebugPrint(
     tid++;
   }
 
-  if (!tensorIsArg) return;
+  if (!tensorIsArg) {
+    return;
+  }
 
   /*
    * Determine the debug function name from @internalTp

@@ -308,9 +308,6 @@ Value reshapeValuesToLevels(OpBuilder &builder, Location loc,
                             SparseTensorEncodingAttr enc, ValueRange dimSizes,
                             Value valuesBuffer, Value lvlCoords);
 
-/// Hack -> Global to set printing for input tensors
-extern bool printInputTensor;
-
 //===----------------------------------------------------------------------===//
 // Inlined constant generators.
 //
