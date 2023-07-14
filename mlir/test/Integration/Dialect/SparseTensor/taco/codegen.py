@@ -81,6 +81,12 @@ def pytaco_to_mlir(args) -> List[str]:
         with open(f'{OUTPUT_DIR}/{function_prefix}.mlir', 'w') as file:
             if args.v: print(DEBUG, f'Outputting @{function_prefix}.main to {OUTPUT_DIR}/{function_prefix}.mlir ...')
             file.write(f'{mlir_function}\n')
+
+        # Reformat MLIR code
+        if args.v: print(DEBUG, f'Reformatting {OUTPUT_DIR}/{function_prefix}.mlir ...')
+        cmd = f'{OPT} {OUTPUT_DIR}/{function_prefix}.mlir -o {OUTPUT_DIR}/{function_prefix}.mlir'
+        process = subprocess.Popen(cmd, shell=True)
+        process.wait()
         
         if args.v: print(DEBUG, "DONE.")
 
