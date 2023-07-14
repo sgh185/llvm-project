@@ -477,6 +477,7 @@ extern "C" MLIR_CRUNNERUTILS_EXPORT void printBF16(uint16_t bits); // bits!
 //===----------------------------------------------------------------------===//
 extern "C" MLIR_CRUNNERUTILS_EXPORT void printFlops(double flops);
 extern "C" MLIR_CRUNNERUTILS_EXPORT double rtclock();
+extern "C" MLIR_CRUNNERUTILS_EXPORT void rtclock_interval(double start, double end);
 
 //===----------------------------------------------------------------------===//
 // Runtime support library for random number generation.

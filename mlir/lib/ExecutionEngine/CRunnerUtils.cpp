@@ -132,6 +132,11 @@ extern "C" double rtclock() {
 #endif // _WIN32
 }
 
+/// Prints the number of seconds in an interval of rtclock() calls.
+extern "C" void rtclock_interval(double start, double end) {
+  fprintf(stderr, "\n=============\nrtclock_interval\n%lf secs\n=============\n\n", end - start);
+}
+
 extern "C" void *mlirAlloc(uint64_t size) { return malloc(size); }
 
 extern "C" void *mlirAlignedAlloc(uint64_t alignment, uint64_t size) {
