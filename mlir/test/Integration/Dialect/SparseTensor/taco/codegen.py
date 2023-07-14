@@ -73,8 +73,8 @@ def pytaco_to_mlir(args) -> List[str]:
         if args.v: print(DEBUG, f'Generating MLIR for [{tensor_name}] to @{function_prefix}.main ...')
 
         # MLIR codegen
-        if args.density: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=True, density=args.density)
-        else: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=args.gen_inputs)
+        if args.density: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=True, add_timing=args.add_timing, dump_frostt=args.dump_frostt, density=args.density)
+        else: mlir_function = ta.emit_mlir(prefix=function_prefix, generate_inputs=args.gen_inputs, add_timing=args.add_timing, dump_frostt=args.dump_frostt)
         assignment_num += 1
 
         # Write to a file
@@ -84,7 +84,7 @@ def pytaco_to_mlir(args) -> List[str]:
 
         # Reformat MLIR code
         if args.v: print(DEBUG, f'Reformatting {OUTPUT_DIR}/{function_prefix}.mlir ...')
-        cmd = f'{OPT} {OUTPUT_DIR}/{function_prefix}.mlir -o {OUTPUT_DIR}/{function_prefix}.mlir'
+        cmd = f'{OPT} {OUTPUT_DIR}/{function_prefix}.mlir -o {OUTPUT_DIR}/{function_prefix}.reformatted.mlir ; mv {OUTPUT_DIR}/{function_prefix}.reformatted.mlir {OUTPUT_DIR}/{function_prefix}.mlir'
         process = subprocess.Popen(cmd, shell=True)
         process.wait()
         
@@ -222,9 +222,17 @@ if __name__ == "__main__":
         action='store_true',
         help='Run the generated code using mlir-cpu-runner | dependent on --gen-inputs')
     argparser.add_argument(
+        '--add-timing',
+        action='store_true',
+        help='Add timing instrumentation to the kernel | dependent on --gen-inputs')
+    argparser.add_argument(
         '--disable-dump',
         action='store_true',
         help='Disable printing of IR after each pass')
+    argparser.add_argument(
+        '--dump-frostt',
+        action='store_true',
+        help='Dump input and output tensors in FROSTT format')
     argparser.add_argument(
         '--extra',
         type=str,
@@ -240,9 +248,15 @@ if __name__ == "__main__":
 
     if args.run and not args.gen_inputs:
         argparser.error("--run requires --gen-inputs.")
-    
+
     if args.run and not args.disable_omp:
         argparser.error("--run does not currently support OpenMP.")
+    
+    if args.add_timing and not args.gen_inputs:
+        argparser.error("--add-timing requires --gen-inputs.")
+
+    if args.dump_frostt and not args.gen_inputs:
+        argparser.error("--dump-frostt requires --gen-inputs.")
 
     if args.output_dir is not None: OUTPUT_DIR = args.output_dir
     if args.kernels_dir is not None: KERNELS_DIR = args.kernels_dir
