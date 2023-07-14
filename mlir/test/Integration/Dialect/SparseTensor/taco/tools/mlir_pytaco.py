@@ -28,6 +28,7 @@ import functools
 import operator
 import os
 import threading
+import sys
 
 import sparse
 
@@ -745,12 +746,21 @@ class IndexExpr(abc.ABC):
                 "llvm.emit_c_interface"
             ] = ir.UnitAttr.get()
 
-    def _insert_and_emit_kernel_inputs(self, module: ir.Module, density: Optional[List[float]] = None) -> str:
+    def _insert_and_emit_kernel_inputs(
+        self, 
+        module: ir.Module, 
+        add_timing: bool = False,
+        dump_frostt: bool = False,
+        density: Optional[List[float]] = None) -> str:
         """Inserts random kernel inputs as MLIR operations in a @main
         function and emits @main and the kernel function.
 
+        TODO: Use MLIR-python bindings
+
         Args:
           module: The MLIR module to insert the kernel function.
+          add_timing: Flag to control timing instrumentation to the kernel.
+          dump_frostt: Flag to insert sparse_tensor.out to dump tensors in FROSTT format.
           density: A list of density values for each random input tensor
 
         Returns:
@@ -774,8 +784,14 @@ class IndexExpr(abc.ABC):
             func.func @main() {\n\
                 %none = llvm.mlir.null : !llvm.ptr<i8>\n"
 
+        # Set up timing function if necessary
+        if add_timing:
+            main_func = "\
+                func.func private @rtclock() -> (f64)\n\
+                func.func private @rtclock_interval(f64, f64) -> ()\n" + main_func
+
         # Parse the kernel function arguments and return value
-        np.set_printoptions(linewidth=np.inf)
+        np.set_printoptions(linewidth=np.inf, threshold=sys.maxsize, precision=6, suppress=True)
         arg_types = []
         if not density: density = [0.1] * len(kernel_func.arguments)
         else: assert len(density) == len(kernel_func.arguments)
@@ -799,15 +815,22 @@ class IndexExpr(abc.ABC):
             # sparse format, and dump it for debugging -> as MLIR operations
             input_tensor_ops = f"\
                 %c{i} = arith.constant dense<{tensor_values}> : {tensor_type_no_enc}\n\
-                %t{i} = sparse_tensor.convert %c{i} : {tensor_type_no_enc} to {tensor_type}\n\
-                sparse_tensor.out %t{i}, %none : {tensor_type}, !llvm.ptr<i8>\n"
+                %t{i} = sparse_tensor.convert %c{i} : {tensor_type_no_enc} to {tensor_type}\n"
+
+            if dump_frostt: input_tensor_ops += "sparse_tensor.out %t{i}, %none : {tensor_type}, !llvm.ptr<i8>\n"
             
             main_func += input_tensor_ops
 
-        # Add the call and result sparse_tensor.out to the function
-        call = f"%res = call @{str(kernel_func.name)[1:-1]}({', '.join([f'%t{i}' for i in range(len(arg_types))])}) : ({', '.join([str(at) for at in arg_types])}) -> {kernel_func.type.results[0]}\n"
-        last_out = f"sparse_tensor.out %res, %none : {kernel_func.type.results[0]}, !llvm.ptr<i8>\n"
-        main_func += (call + last_out)
+        # Add the call and result sparse_tensor.out to the function. 
+        # If @add_timing is set, we want to record the execution time
+        # via calls to the runtime function rtclock and rtclock_interval.
+        call_ops = []
+        if add_timing: call_ops.append(f"%start = call @rtclock() : () -> (f64)") # Start of interval
+        call_ops.append(f"%res = call @{str(kernel_func.name)[1:-1]}({', '.join([f'%t{i}' for i in range(len(arg_types))])}) : ({', '.join([str(at) for at in arg_types])}) -> {kernel_func.type.results[0]}\n") # Kernel call
+        if add_timing: call_ops.append(f"%end = call @rtclock() : () -> (f64)") # End of interval
+        if dump_frostt: call_ops.append(f"sparse_tensor.out %res, %none : {kernel_func.type.results[0]}, !llvm.ptr<i8>\n") # Result output
+        if add_timing: call_ops.append(f"call @rtclock_interval(%start, %end) : (f64, f64) -> ()") # Print interval
+        main_func += ''.join(call_ops)
         
         # Add return
         main_func += "return\n}\n"
@@ -860,6 +883,8 @@ class IndexExpr(abc.ABC):
         dst_indices: Tuple["IndexVar", ...],
         prefix: str = "",
         generate_inputs: bool = False,
+        add_timing: bool = False,
+        dump_frostt: bool = False,
         density: Optional[List[float]] = None
     ) -> str:
         """Emits the tensor assignment dst[dst_indices] = expression as MLIR.
@@ -873,6 +898,8 @@ class IndexExpr(abc.ABC):
           dst_indices: The tuple of IndexVar used to access the destination tensor.
           prefix: A string prepended to the name for the emitted MLIR function.
           generate_inputs: Flag to generate random inputs for the kernel.
+          add_timing: Flag to control timing instrumentation to the kernel.
+          dump_frostt: Flag to insert sparse_tensor.out to dump tensors in FROSTT format.
           density: A list of density values for each random input tensor
 
         Returns:
@@ -890,7 +917,7 @@ class IndexExpr(abc.ABC):
             self._emit_assignment(
                 module, dst, dst_indices, expr_to_info, input_accesses, prefix
             )
-            if generate_inputs: mlir_code = self._insert_and_emit_kernel_inputs(module, density)
+            if generate_inputs: mlir_code = self._insert_and_emit_kernel_inputs(module, add_timing, dump_frostt, density)
             else: mlir_code = str(module)
             return mlir_code
 
@@ -1601,6 +1628,8 @@ class Tensor:
         force_recompile: bool = False, 
         prefix: str = "", 
         generate_inputs: bool = False,
+        add_timing: bool = False,
+        dump_frostt: bool = False,
         density: Optional[List[float]] = None
     ) -> Union[None, str]:
         """Emits the tensor assignment as high-level MLIR.
@@ -1613,6 +1642,8 @@ class Tensor:
             purpose of timing.
           prefix: A string prepended to the name for the emitted MLIR function.
           generate_inputs: Flag that controls test input generation.
+          add_timing: Flag to control timing instrumentation to the kernel.
+          dump_frostt: Flag to insert sparse_tensor.out to dump tensors in FROSTT format.
           density: A list of density values for each random input tensor
 
         Returns:
@@ -1627,7 +1658,7 @@ class Tensor:
             return None
 
         return self._assignment.expression.emit_mlir(
-            self, self._assignment.indices, prefix, generate_inputs, density
+            self, self._assignment.indices, prefix, generate_inputs, add_timing, dump_frostt, density
         )
 
     def compute(self) -> None:
