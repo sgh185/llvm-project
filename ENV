@@ -6,5 +6,6 @@ export PATH=${MLIR_LLVM_DIR}/build/bin:$PATH
 export PYTHONPATH=${MLIR_LLVM_DIR}/build/tools/mlir/python_packages/mlir_core
 export SUPPORTLIB=${MLIR_LLVM_DIR}/build/lib/libmlir_c_runner_utils.so
 export RUNNERLIB=${MLIR_LLVM_DIR}/build/lib/libmlir_runner_utils.so
+export OMPLIB=`ldconfig -p | grep "libomp.*5" | grep -o '[^=> ]*$'`
 export TACO=${PWD}/mlir/test/Integration/Dialect/SparseTensor/taco
-export FORCEMAIN=1
+export FORCEMAIN=0

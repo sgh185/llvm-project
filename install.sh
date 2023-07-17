@@ -8,7 +8,8 @@ mkdir -p ${MLIR_LLVM_DIR}/build ;
 cd ${MLIR_LLVM_DIR}/build ;
 
 cmake -G Ninja ../llvm \
-    -DLLVM_ENABLE_PROJECTS=mlir \
+    -DLLVM_ENABLE_PROJECTS="mlir" \
+    -DLLVM_ENABLE_RUNTIMES=openmp \
     -DLLVM_BUILD_EXAMPLES=ON \
     -DLLVM_TARGETS_TO_BUILD="Native;NVPTX;AMDGPU" \
     -DCMAKE_BUILD_TYPE=Release \
