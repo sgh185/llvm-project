@@ -66,6 +66,8 @@ static const RISCVSupportedExtension SupportedExtensions[] = {
     {"v", RISCVExtensionVersion{1, 0}},
 
     // vendor-defined ('X') extensions
+    {"xcvbitmanip", RISCVExtensionVersion{1, 0}},
+    {"xcvmac", RISCVExtensionVersion{1, 0}},
     {"xsfcie", RISCVExtensionVersion{1, 0}},
     {"xsfvcp", RISCVExtensionVersion{1, 0}},
     {"xtheadba", RISCVExtensionVersion{1, 0}},
@@ -135,6 +137,9 @@ static const RISCVSupportedExtension SupportedExtensions[] = {
     {"zve64d", RISCVExtensionVersion{1, 0}},
     {"zve64f", RISCVExtensionVersion{1, 0}},
     {"zve64x", RISCVExtensionVersion{1, 0}},
+
+    {"zvfh", RISCVExtensionVersion{1, 0}},
+
     {"zvl1024b", RISCVExtensionVersion{1, 0}},
     {"zvl128b", RISCVExtensionVersion{1, 0}},
     {"zvl16384b", RISCVExtensionVersion{1, 0}},
@@ -170,7 +175,6 @@ static const RISCVSupportedExtension SupportedExperimentalExtensions[] = {
 
     {"zvfbfmin", RISCVExtensionVersion{0, 6}},
     {"zvfbfwma", RISCVExtensionVersion{0, 6}},
-    {"zvfh", RISCVExtensionVersion{0, 1}},
 
     // vector crypto
     {"zvkg", RISCVExtensionVersion{1, 0}},
@@ -938,10 +942,6 @@ Error RISCVISAInfo::checkDependency() {
   if (XLen != 32 && Exts.count("zcf"))
     return createStringError(errc::invalid_argument,
                              "'zcf' is only supported for 'rv32'");
-
-  // Additional dependency checks.
-  // TODO: The 'q' extension requires rv64.
-  // TODO: It is illegal to specify 'e' extensions with 'f' and 'd'.
 
   return Error::success();
 }

@@ -1713,13 +1713,11 @@ defm vmax : RVVSignedBinBuiltinSet;
 
 // 12.10. Vector Single-Width Integer Multiply Instructions
 defm vmul : RVVIntBinBuiltinSet;
-let RequiredFeatures = ["FullMultiply"] in {
 defm vmulh : RVVSignedBinBuiltinSet;
 defm vmulhu : RVVUnsignedBinBuiltinSet;
 defm vmulhsu : RVVOutOp1BuiltinSet<"vmulhsu", "csil",
                                    [["vv", "v", "vvUv"],
                                     ["vx", "v", "vvUe"]]>;
-}
 
 // 12.11. Vector Integer Divide Instructions
 defm vdivu : RVVUnsignedBinBuiltinSet;
@@ -1859,9 +1857,7 @@ let ManualCodegen = [{
   defm vasub : RVVSignedBinBuiltinSetRoundingMode;
 
   // 13.3. Vector Single-Width Fractional Multiply with Rounding and Saturation
-  let RequiredFeatures = ["FullMultiply"] in {
   defm vsmul : RVVSignedBinBuiltinSetRoundingMode;
-  }
 
   // 13.4. Vector Single-Width Scaling Shift Instructions
   defm vssrl : RVVUnsignedShiftBuiltinSetRoundingMode;
@@ -2368,7 +2364,7 @@ let ManualCodegen = [{
     let OverloadedName = "vfcvt_x" in
       defm :
         RVVConvBuiltinSet<"vfcvt_x_f_v", "xfd", [["Iv", "Ivvu"]]>;
-    let OverloadedName = "vfcvt_xu" in    
+    let OverloadedName = "vfcvt_xu" in
       defm :
         RVVConvBuiltinSet<"vfcvt_xu_f_v", "xfd", [["Uv", "Uvvu"]]>;
     let OverloadedName = "vfcvt_f" in {
@@ -2411,7 +2407,7 @@ let ManualCodegen = [{
   let OverloadedName = "vfcvt_x" in
     defm :
       RVVConvBuiltinSet<"vfcvt_x_f_v", "xfd", [["Iv", "Ivv"]]>;
-  let OverloadedName = "vfcvt_xu" in    
+  let OverloadedName = "vfcvt_xu" in
     defm :
       RVVConvBuiltinSet<"vfcvt_xu_f_v", "xfd", [["Uv", "Uvv"]]>;
   let OverloadedName = "vfcvt_f" in {

@@ -208,62 +208,15 @@ public:
     if (D.hasGlobalStorage())
       return;
 
-    if (D.getType()->isReferenceType()) {
-      // If this is the holding variable for a `BindingDecl`, we may already
-      // have a storage location set up -- so check. (See also explanation below
-      // where we process the `BindingDecl`.)
-      if (Env.getStorageLocation(D) == nullptr) {
-        const Expr *InitExpr = D.getInit();
-        assert(InitExpr != nullptr);
-        if (auto *InitExprLoc =
-                Env.getStorageLocation(*InitExpr, SkipPast::Reference)) {
-          Env.setStorageLocation(D, *InitExprLoc);
-        } else {
-          // Even though we have an initializer, we might not get an
-          // InitExprLoc, for example if the InitExpr is a CallExpr for which we
-          // don't have a function body. In this case, we just invent a storage
-          // location and value -- it's the best we can do.
-          StorageLocation &Loc =
-              Env.createStorageLocation(D.getType().getNonReferenceType());
-          Env.setStorageLocation(D, Loc);
-          if (Value *Val = Env.createValue(D.getType().getNonReferenceType()))
-            Env.setValue(Loc, *Val);
-        }
-      }
-    } else {
-      // Not a reference type.
+    // If this is the holding variable for a `BindingDecl`, we may already
+    // have a storage location set up -- so check. (See also explanation below
+    // where we process the `BindingDecl`.)
+    if (D.getType()->isReferenceType() && Env.getStorageLocation(D) != nullptr)
+      return;
 
-      assert(Env.getStorageLocation(D) == nullptr);
-      StorageLocation &Loc = Env.createStorageLocation(D);
-      Env.setStorageLocation(D, Loc);
+    assert(Env.getStorageLocation(D) == nullptr);
 
-      const Expr *InitExpr = D.getInit();
-      if (InitExpr == nullptr) {
-        // No initializer expression - associate `Loc` with a new value.
-        if (Value *Val = Env.createValue(D.getType()))
-          Env.setValue(Loc, *Val);
-        return;
-      }
-
-      if (auto *InitExprVal = Env.getValueStrict(*InitExpr))
-        Env.setValue(Loc, *InitExprVal);
-
-      if (Env.getValue(Loc) == nullptr) {
-        // We arrive here in (the few) cases where an expression is
-        // intentionally "uninterpreted". There are two ways to handle this
-        // situation: propagate the status, so that uninterpreted initializers
-        // result in uninterpreted variables, or provide a default value. We
-        // choose the latter so that later refinements of the variable can be
-        // used for reasoning about the surrounding code.
-        //
-        // FIXME. If and when we interpret all language cases, change this to
-        // assert that `InitExpr` is interpreted, rather than supplying a
-        // default value (assuming we don't update the environment API to return
-        // references).
-        if (Value *Val = Env.createValue(D.getType()))
-          Env.setValue(Loc, *Val);
-      }
-    }
+    Env.setStorageLocation(D, Env.createObject(D));
 
     // `DecompositionDecl` must be handled after we've interpreted the loc
     // itself, because the binding expression refers back to the
@@ -507,29 +460,10 @@ public:
     if (BaseLoc == nullptr)
       return;
 
-    auto &MemberLoc = BaseLoc->getChild(*Member);
-    if (MemberLoc.getType()->isReferenceType()) {
-      // Based on its type, `MemberLoc` must be mapped either to nothing or to a
-      // `ReferenceValue`. For the former, we won't set a storage location for
-      // this expression, so as to maintain an invariant lvalue expressions;
-      // namely, that their location maps to a `ReferenceValue`.  In this,
-      // lvalues are unlike other expressions, where it is valid for their
-      // location to map to nothing (because they are not modeled).
-      //
-      // Note: we need this invariant for lvalues so that, when accessing a
-      // value, we can distinguish an rvalue from an lvalue. An alternative
-      // design, which takes the expression's value category into account, would
-      // avoid the need for this invariant.
-      if (auto *V = Env.getValue(MemberLoc)) {
-        assert(isa<ReferenceValue>(V) &&
-               "reference-typed declarations map to `ReferenceValue`s");
-        Env.setStorageLocation(*S, MemberLoc);
-      }
-    } else {
-      auto &Loc = Env.createStorageLocation(*S);
-      Env.setStorageLocation(*S, Loc);
-      Env.setValue(Loc, Env.create<ReferenceValue>(MemberLoc));
-    }
+    auto *MemberLoc = BaseLoc->getChild(*Member);
+    if (MemberLoc == nullptr)
+      return;
+    Env.setStorageLocationStrict(*S, *MemberLoc);
   }
 
   void VisitCXXDefaultInitExpr(const CXXDefaultInitExpr *S) {
@@ -557,22 +491,18 @@ public:
 
       if (S->isElidable()) {
         Env.setStorageLocation(*S, *ArgLoc);
-      } else {
-        auto &Loc =
-            cast<AggregateStorageLocation>(Env.createStorageLocation(*S));
-        Env.setStorageLocation(*S, Loc);
-        if (Value *Val = Env.createValue(S->getType())) {
-          Env.setValue(Loc, *Val);
-          copyRecord(*ArgLoc, Loc, Env);
-        }
+      } else if (auto *ArgVal = cast_or_null<StructValue>(
+                     Env.getValue(*Arg, SkipPast::Reference))) {
+        auto &Val = *cast<StructValue>(Env.createValue(S->getType()));
+        Env.setValueStrict(*S, Val);
+        copyRecord(ArgVal->getAggregateLoc(), Val.getAggregateLoc(), Env);
       }
       return;
     }
 
-    auto &Loc = Env.createStorageLocation(*S);
-    Env.setStorageLocation(*S, Loc);
-    if (Value *Val = Env.createValue(S->getType()))
-      Env.setValue(Loc, *Val);
+    auto &InitialVal = *cast<StructValue>(Env.createValue(S->getType()));
+    copyRecord(InitialVal.getAggregateLoc(), Env.getResultObjectLocation(*S),
+               Env);
 
     transferInlineCall(S, ConstructorDecl);
   }
@@ -596,21 +526,15 @@ public:
           !Method->isMoveAssignmentOperator())
         return;
 
-      auto *ObjectLoc = cast_or_null<AggregateStorageLocation>(
-          Env.getStorageLocation(*Arg0, SkipPast::Reference));
-      if (ObjectLoc == nullptr)
-        return;
+      auto *LocSrc = cast_or_null<AggregateStorageLocation>(
+          Env.getStorageLocationStrict(*Arg1));
+      auto *LocDst = cast_or_null<AggregateStorageLocation>(
+          Env.getStorageLocationStrict(*Arg0));
 
-      auto *ArgLoc = cast_or_null<AggregateStorageLocation>(
-          Env.getStorageLocation(*Arg1, SkipPast::Reference));
-      if (ArgLoc == nullptr)
-        return;
-
-      copyRecord(*ArgLoc, *ObjectLoc, Env);
-
-      // FIXME: Add a test for the value of the whole expression.
-      // Assign a storage location for the whole expression.
-      Env.setStorageLocation(*S, *ObjectLoc);
+      if (LocSrc != nullptr && LocDst != nullptr) {
+        copyRecord(*LocSrc, *LocDst, Env);
+        Env.setStorageLocationStrict(*S, *LocDst);
+      }
     }
   }
 
@@ -667,9 +591,14 @@ public:
     if (SubExprVal == nullptr)
       return;
 
-    auto &Loc = Env.createStorageLocation(*S);
-    Env.setStorageLocationStrict(*S, Loc);
+    if (StructValue *StructVal = dyn_cast<StructValue>(SubExprVal)) {
+      Env.setStorageLocation(*S, StructVal->getAggregateLoc());
+      return;
+    }
+
+    StorageLocation &Loc = Env.createStorageLocation(*S);
     Env.setValue(Loc, *SubExprVal);
+    Env.setStorageLocation(*S, Loc);
   }
 
   void VisitCXXBindTemporaryExpr(const CXXBindTemporaryExpr *S) {
@@ -692,43 +621,50 @@ public:
     // FIXME: Revisit this once flow conditions are added to the framework. For
     // `a = b ? c : d` we can add `b => a == c && !b => a == d` to the flow
     // condition.
-    if (S->isGLValue()) {
-      auto &Loc = Env.createStorageLocation(*S);
-      Env.setStorageLocationStrict(*S, Loc);
-      if (Value *Val = Env.createValue(S->getType()))
-        Env.setValue(Loc, *Val);
-    } else if (Value *Val = Env.createValue(S->getType())) {
+    if (S->isGLValue())
+      Env.setStorageLocationStrict(*S, Env.createObject(S->getType()));
+    else if (Value *Val = Env.createValue(S->getType()))
       Env.setValueStrict(*S, *Val);
-    }
   }
 
   void VisitInitListExpr(const InitListExpr *S) {
     QualType Type = S->getType();
 
-    auto &Loc = Env.createStorageLocation(*S);
-    Env.setStorageLocation(*S, Loc);
+    if (!Type->isStructureOrClassType()) {
+      if (auto *Val = Env.createValue(Type))
+        Env.setValueStrict(*S, *Val);
 
-    auto *Val = Env.createValue(Type);
-    if (Val == nullptr)
       return;
-
-    Env.setValue(Loc, *Val);
-
-    if (Type->isStructureOrClassType()) {
-      std::vector<FieldDecl *> Fields =
-          getFieldsForInitListExpr(Type->getAsRecordDecl());
-      for (auto [Field, Init] : llvm::zip(Fields, S->inits())) {
-        assert(Field != nullptr);
-        assert(Init != nullptr);
-
-        if (Field->getType()->isReferenceType()) {
-          if (StorageLocation *Loc = Env.getStorageLocationStrict(*Init))
-            cast<StructValue>(Val)->setChild(*Field,
-                                             Env.create<ReferenceValue>(*Loc));
-        } else if (Value *InitVal = Env.getValue(*Init, SkipPast::None))
-          cast<StructValue>(Val)->setChild(*Field, *InitVal);
-      }
     }
+
+    // In case the initializer list is transparent, we just need to propagate
+    // the value that it contains.
+    if (S->isSemanticForm() && S->isTransparent()) {
+      propagateValue(*S->getInit(0), *S, Env);
+      return;
+    }
+
+    std::vector<FieldDecl *> Fields =
+        getFieldsForInitListExpr(Type->getAsRecordDecl());
+    llvm::DenseMap<const ValueDecl *, StorageLocation *> FieldLocs;
+
+    for (auto [Field, Init] : llvm::zip(Fields, S->inits())) {
+      assert(Field != nullptr);
+      assert(Init != nullptr);
+
+      FieldLocs.insert({Field, &Env.createObject(Field->getType(), Init)});
+    }
+
+    auto &Loc =
+        Env.getDataflowAnalysisContext()
+            .arena()
+            .create<AggregateStorageLocation>(Type, std::move(FieldLocs));
+    StructValue &StructVal = Env.create<StructValue>(Loc);
+
+    Env.setValue(Loc, StructVal);
+
+    Env.setValueStrict(*S, StructVal);
+
     // FIXME: Implement array initialization.
   }
 

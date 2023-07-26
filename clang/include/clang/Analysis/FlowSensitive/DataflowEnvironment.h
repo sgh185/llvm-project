@@ -334,6 +334,31 @@ public:
   /// in the environment.
   AggregateStorageLocation *getThisPointeeStorageLocation() const;
 
+  /// Returns the location of the result object for a record-type prvalue.
+  ///
+  /// In C++, prvalues of record type serve only a limited purpose: They can
+  /// only be used to initialize a result object (e.g. a variable or a
+  /// temporary). This function returns the location of that result object.
+  ///
+  /// When creating a prvalue of record type, we already need the storage
+  /// location of the result object to pass in `this`, even though prvalues are
+  /// otherwise not associated with storage locations.
+  ///
+  /// FIXME: Currently, this simply returns a stable storage location for `E`,
+  /// but this doesn't do the right thing in scenarios like the following:
+  /// ```
+  /// MyClass c = some_condition()? MyClass(foo) : MyClass(bar);
+  /// ```
+  /// Here, `MyClass(foo)` and `MyClass(bar)` will have two different storage
+  /// locations, when in fact their storage locations should be the same.
+  /// Eventually, we want to propagate storage locations from result objects
+  /// down to the prvalues that initialize them, similar to the way that this is
+  /// done in Clang's CodeGen.
+  ///
+  /// Requirements:
+  ///  `E` must be a prvalue of record type.
+  AggregateStorageLocation &getResultObjectLocation(const Expr &RecordPRValue);
+
   /// Returns the return value of the current function. This can be null if:
   /// - The function has a void return type
   /// - No return value could be determined for the function, for example
@@ -385,20 +410,58 @@ public:
   PointerValue &getOrCreateNullPointerValue(QualType PointeeType);
 
   /// Creates a value appropriate for `Type`, if `Type` is supported, otherwise
-  /// return null. If `Type` is a pointer or reference type, creates all the
-  /// necessary storage locations and values for indirections until it finds a
+  /// returns null.
+  ///
+  /// If `Type` is a pointer or reference type, creates all the necessary
+  /// storage locations and values for indirections until it finds a
   /// non-pointer/non-reference type.
+  ///
+  /// If `Type` is a class, struct, or union type, calls `setValue()` to
+  /// associate the `StructValue` with its storage location
+  /// (`StructValue::getAggregateLoc()`).
+  ///
+  /// If `Type` is one of the following types, this function will always return
+  /// a non-null pointer:
+  /// - `bool`
+  /// - Any integer type
+  /// - Any class, struct, or union type
   ///
   /// Requirements:
   ///
   ///  `Type` must not be null.
   Value *createValue(QualType Type);
 
+  /// Creates an object (i.e. a storage location with an associated value) of
+  /// type `Ty`. If `InitExpr` is non-null and has a value associated with it,
+  /// initializes the object with this value. Otherwise, initializes the object
+  /// with a value created using `createValue()`.
+  StorageLocation &createObject(QualType Ty, const Expr *InitExpr = nullptr) {
+    return createObjectInternal(nullptr, Ty, InitExpr);
+  }
+
+  /// Creates an object for the variable declaration `D`. If `D` has an
+  /// initializer and this initializer is associated with a value, initializes
+  /// the object with this value.  Otherwise, initializes the object with a
+  /// value created using `createValue()`. Uses the storage location returned by
+  /// `DataflowAnalysisContext::getStableStorageLocation(D)`.
+  StorageLocation &createObject(const VarDecl &D) {
+    return createObjectInternal(&D, D.getType(), D.getInit());
+  }
+
+  /// Creates an object for the variable declaration `D`. If `InitExpr` is
+  /// non-null and has a value associated with it, initializes the object with
+  /// this value. Otherwise, initializes the object with a value created using
+  /// `createValue()`.  Uses the storage location returned by
+  /// `DataflowAnalysisContext::getStableStorageLocation(D)`.
+  StorageLocation &createObject(const VarDecl &D, const Expr *InitExpr) {
+    return createObjectInternal(&D, D.getType(), InitExpr);
+  }
+
   /// Assigns `Val` as the value of `Loc` in the environment.
   void setValue(const StorageLocation &Loc, Value &Val);
 
   /// Clears any association between `Loc` and a value in the environment.
-  void clearValue(const StorageLocation &Loc);
+  void clearValue(const StorageLocation &Loc) { LocToVal.erase(&Loc); }
 
   /// Assigns `Val` as the value of the prvalue `E` in the environment.
   ///
@@ -417,6 +480,10 @@ public:
   ///
   ///  `E` must be a prvalue
   ///  `Val` must not be a `ReferenceValue`
+  ///  If `Val` is a `StructValue`, its `AggregateStorageLocation` must be the
+  ///  same as that of any `StructValue` that has already been associated with
+  ///  `E`. This is to guarantee that the result object initialized by a prvalue
+  ///  `StructValue` has a durable storage location.
   void setValueStrict(const Expr &E, Value &Val);
 
   /// Returns the value assigned to `Loc` in the environment or null if `Loc`
@@ -592,6 +659,19 @@ private:
                                           llvm::DenseSet<QualType> &Visited,
                                           int Depth, int &CreatedValuesCount);
 
+  /// Creates a storage location for `Ty`. Also creates and associates a value
+  /// with the storage location, unless values of this type are not supported or
+  /// we hit one of the limits at which we stop producing values (controlled by
+  /// `Visited`, `Depth`, and `CreatedValuesCount`).
+  StorageLocation &createLocAndMaybeValue(QualType Ty,
+                                          llvm::DenseSet<QualType> &Visited,
+                                          int Depth, int &CreatedValuesCount);
+
+  /// Shared implementation of `createObject()` overloads.
+  /// `D` and `InitExpr` may be null.
+  StorageLocation &createObjectInternal(const VarDecl *D, QualType Ty,
+                                        const Expr *InitExpr);
+
   StorageLocation &skip(StorageLocation &Loc, SkipPast SP) const;
   const StorageLocation &skip(const StorageLocation &Loc, SkipPast SP) const;
 
@@ -635,12 +715,6 @@ private:
   // deterministic sequence. This in turn produces deterministic SAT formulas.
   llvm::MapVector<const StorageLocation *, Value *> LocToVal;
 
-  // Maps locations of struct members to symbolic values of the structs that own
-  // them and the decls of the struct members.
-  llvm::DenseMap<const StorageLocation *,
-                 std::pair<StructValue *, const ValueDecl *>>
-      MemberLocToStruct;
-
   Atom FlowConditionToken;
 };
 
@@ -660,6 +734,24 @@ AggregateStorageLocation *getBaseObjectLocation(const MemberExpr &ME,
 /// Returns the fields of `RD` that are initialized by an `InitListExpr`, in the
 /// order in which they appear in `InitListExpr::inits()`.
 std::vector<FieldDecl *> getFieldsForInitListExpr(const RecordDecl *RD);
+
+/// Associates a new `StructValue` with `Loc` and returns the new value.
+/// It is not defined whether the field values remain the same or not.
+///
+/// This function is primarily intended for use by checks that set custom
+/// properties on `StructValue`s to model the state of these values. Such checks
+/// should avoid modifying the properties of an existing `StructValue` because
+/// these changes would be visible to other `Environment`s that share the same
+/// `StructValue`. Instead, call `refreshStructValue()`, then set the properties
+/// on the new `StructValue` that it returns. Typical usage:
+///
+///   refreshStructValue(Loc, Env).setProperty("my_prop", MyPropValue);
+StructValue &refreshStructValue(AggregateStorageLocation &Loc,
+                                Environment &Env);
+
+/// Associates a new `StructValue` with `Expr` and returns the new value.
+/// See also documentation for the overload above.
+StructValue &refreshStructValue(const Expr &Expr, Environment &Env);
 
 } // namespace dataflow
 } // namespace clang

@@ -844,15 +844,15 @@ define i32 @select_and_1(i1 zeroext %cond, i32 %a, i32 %b) {
 ;
 ; RV64IMXVTCONDOPS-LABEL: select_and_1:
 ; RV64IMXVTCONDOPS:       # %bb.0: # %entry
+; RV64IMXVTCONDOPS-NEXT:    and a1, a1, a2
 ; RV64IMXVTCONDOPS-NEXT:    vt.maskcn a0, a2, a0
-; RV64IMXVTCONDOPS-NEXT:    and a1, a2, a1
 ; RV64IMXVTCONDOPS-NEXT:    or a0, a1, a0
 ; RV64IMXVTCONDOPS-NEXT:    ret
 ;
 ; CHECKZICOND-LABEL: select_and_1:
 ; CHECKZICOND:       # %bb.0: # %entry
+; CHECKZICOND-NEXT:    and a1, a1, a2
 ; CHECKZICOND-NEXT:    czero.nez a0, a2, a0
-; CHECKZICOND-NEXT:    and a1, a2, a1
 ; CHECKZICOND-NEXT:    or a0, a1, a0
 ; CHECKZICOND-NEXT:    ret
 entry:
@@ -882,16 +882,16 @@ define i32 @select_and_2(i1 zeroext %cond, i32 %a, i32 %b) {
 ;
 ; RV64IMXVTCONDOPS-LABEL: select_and_2:
 ; RV64IMXVTCONDOPS:       # %bb.0: # %entry
+; RV64IMXVTCONDOPS-NEXT:    and a2, a1, a2
 ; RV64IMXVTCONDOPS-NEXT:    vt.maskc a0, a1, a0
-; RV64IMXVTCONDOPS-NEXT:    and a1, a1, a2
-; RV64IMXVTCONDOPS-NEXT:    or a0, a1, a0
+; RV64IMXVTCONDOPS-NEXT:    or a0, a2, a0
 ; RV64IMXVTCONDOPS-NEXT:    ret
 ;
 ; CHECKZICOND-LABEL: select_and_2:
 ; CHECKZICOND:       # %bb.0: # %entry
+; CHECKZICOND-NEXT:    and a2, a1, a2
 ; CHECKZICOND-NEXT:    czero.eqz a0, a1, a0
-; CHECKZICOND-NEXT:    and a1, a1, a2
-; CHECKZICOND-NEXT:    or a0, a1, a0
+; CHECKZICOND-NEXT:    or a0, a2, a0
 ; CHECKZICOND-NEXT:    ret
 entry:
   %c = and i32 %a, %b
@@ -920,18 +920,16 @@ define i32 @select_and_3(i1 zeroext %cond, i32 %a) {
 ;
 ; RV64IMXVTCONDOPS-LABEL: select_and_3:
 ; RV64IMXVTCONDOPS:       # %bb.0: # %entry
+; RV64IMXVTCONDOPS-NEXT:    andi a2, a1, 42
 ; RV64IMXVTCONDOPS-NEXT:    vt.maskc a0, a1, a0
-; RV64IMXVTCONDOPS-NEXT:    li a2, 42
-; RV64IMXVTCONDOPS-NEXT:    and a1, a1, a2
-; RV64IMXVTCONDOPS-NEXT:    or a0, a1, a0
+; RV64IMXVTCONDOPS-NEXT:    or a0, a2, a0
 ; RV64IMXVTCONDOPS-NEXT:    ret
 ;
 ; CHECKZICOND-LABEL: select_and_3:
 ; CHECKZICOND:       # %bb.0: # %entry
+; CHECKZICOND-NEXT:    andi a2, a1, 42
 ; CHECKZICOND-NEXT:    czero.eqz a0, a1, a0
-; CHECKZICOND-NEXT:    li a2, 42
-; CHECKZICOND-NEXT:    and a1, a1, a2
-; CHECKZICOND-NEXT:    or a0, a1, a0
+; CHECKZICOND-NEXT:    or a0, a2, a0
 ; CHECKZICOND-NEXT:    ret
 entry:
   %c = and i32 %a, 42
